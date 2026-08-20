@@ -1,0 +1,597 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8">
+<title>Перенос строк и рост холста</title><style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:#f6f7f9;color:#14181f;padding:34px 28px 70px}
+.w{max-width:1180px;margin:0 auto}
+h1{font-size:20px;font-weight:650;letter-spacing:-.02em;margin-bottom:8px}
+.sub{font-size:13.5px;color:#5a6472;line-height:1.6;max-width:640px;margin-bottom:26px}
+h2{font-size:12px;font-weight:650;letter-spacing:.1em;text-transform:uppercase;color:#5a6472;margin:26px 0 12px}
+.row{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.c{border:1px solid #e2e5ea;border-radius:10px;overflow:hidden;background:#fff}
+.v{display:flex;align-items:center;justify-content:center;padding:12px}
+.v svg{display:block;width:100%;height:auto;max-width:300px}
+.m{padding:9px 12px;border-top:1px solid #eef0f3;background:#fcfcfd}
+.mn{font-size:11.5px;font-weight:600}
+.ms{font-size:10.5px;color:#8c96a5;margin-top:3px;font-family:ui-monospace,monospace}
+</style></head><body><div class="w">
+<h1>Перенос строк и рост холста</h1>
+<p class="sub">Подписи переносятся на две строки, элемент подрастает в высоту. Односложное слово переносить нечем — там кегль уменьшается. Когда всё помещается в строку, холст остаётся прежним, 190.</p>
+<div id="o"></div></div>
+<script>
+
+
+/* ═══════ ДВИЖКИ ═══════
+   Каждый стиль — набор правил геометрии и подачи.
+   Элементы рисуются через эти правила, а не вручную. */
+
+let s_glass_a='#6366f1', s_glass_b='#06b6d4';
+const ST = {
+flat:{n:'Flat',rule:'сплошные заливки · без глубины',dot:'#6366f1',
+  bg:'#0d0f14',surf:'#161a24',bd:'#232838',bdw:1,r:8,
+  tp:'#ffffff',ts:'#8b95a8',tm:'#5c6678',ac:'#6366f1',ac2:'#8b5cf6',ac3:'#06b6d4',pos:'#10b981',track:'#232838',
+  ff:'Inter,system-ui,sans-serif',caps:0,ls:.5,wl:500,wv:700,mode:'solid'},
+
+shadow:{n:'Shadow',rule:'парит над фоном · тень вниз',dot:'#8b5cf6',
+  bg:'#eef2f7',surf:'#ffffff',bd:null,bdw:0,r:14,
+  tp:'#0f172a',ts:'#64748b',tm:'#94a3b8',ac:'#4f46e5',ac2:'#7c3aed',ac3:'#0891b2',pos:'#059669',track:'#e4eaf2',
+  ff:'Inter,system-ui,sans-serif',caps:0,ls:.5,wl:500,wv:700,mode:'shadow',
+  defs:`<filter id="f-sh" x="-30%" y="-30%" width="160%" height="180%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#1e3a5f" flood-opacity="0.14"/></filter>`,
+  surfFx:'url(#f-sh)'},
+
+iso:{n:'Isometric',rule:'проекция · три грани',dot:'#06b6d4',
+  bg:'#0d0f14',surf:'#1c2133',bd:null,bdw:0,r:0,
+  tp:'#ffffff',ts:'#8b95a8',tm:'#5c6678',ac:'#6366f1',ac2:'#8b5cf6',ac3:'#06b6d4',pos:'#10b981',track:'#252b40',
+  ff:'Inter,system-ui,sans-serif',caps:0,ls:.5,wl:500,wv:700,mode:'iso',dx:22,dy:-14},
+
+gradient:{n:'Gradient',rule:'цвет как поверхность',dot:'#f59e0b',
+  bg:'#0d0f14',surf:'url(#g-card)',bd:null,bdw:0,r:14,
+  tp:'#ffffff',ts:'rgba(255,255,255,.72)',tm:'rgba(255,255,255,.58)',ac:'rgba(255,255,255,.34)',ac2:'rgba(255,255,255,.26)',ac3:'rgba(255,255,255,.19)',pos:'rgba(255,255,255,.42)',track:'rgba(255,255,255,.14)',
+  ff:'Inter,system-ui,sans-serif',caps:0,ls:.5,wl:500,wv:700,mode:'gradient',
+  defs:`<linearGradient id="g-card" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#6366f1"/><stop offset="55%" stop-color="#7c5cd6"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient>
+  <linearGradient id="g-bar" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient>
+  <linearGradient id="g-barv" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient>`},
+
+glass:{n:'Glassmorphism',rule:'плита из стекла · фаска',dot:'#cbd5e1',
+  bg:'#08111f',surf:'rgba(255,255,255,.13)',bd:'url(#g-rim)',bdw:1.5,r:20,
+  tp:'#ffffff',ts:'rgba(255,255,255,.62)',tm:'rgba(255,255,255,.42)',ac:'#818cf8',ac2:'#c4b5fd',ac3:'#67e8f9',pos:'#6ee7b7',track:'rgba(255,255,255,.12)',
+  ff:'Inter,system-ui,sans-serif',caps:0,ls:.5,wl:500,wv:600,mode:'glass',
+  defs:`<filter id="f-gb" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="20"/></filter>
+  <linearGradient id="g-rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff" stop-opacity=".55"/><stop offset="45%" stop-color="#fff" stop-opacity=".12"/><stop offset="100%" stop-color="#fff" stop-opacity=".3"/></linearGradient>`,
+  deco:(w,h)=>{
+    // свет виден только сквозь панель: пятна обрезаются её формой,
+    // поэтому за пределами карточки элемент ничего не рисует и ложится на любой тёмный фон
+    const px=14, py=14, pw=w-28, ph=h-28, pr=20;
+    return `<clipPath id="gl-panel"><rect x="${px}" y="${py}" width="${pw}" height="${ph}" rx="${pr}"/></clipPath>`+
+      `<g clip-path="url(#gl-panel)">`+
+      `<circle cx="${w*.18}" cy="${h*.2}" r="${h*.36}" fill="${s_glass_a}" opacity=".78" filter="url(#f-gb)"/>`+
+      `<circle cx="${w*.82}" cy="${h*.86}" r="${h*.32}" fill="${s_glass_b}" opacity=".68" filter="url(#f-gb)"/>`+
+      `</g>`;
+  }},
+
+neon:{n:'Neon / Glow',rule:'контур светится · без заливки',dot:'#10b981',
+  bg:'#04060d',surf:'#080d1a',bd:'#6366f1',bdw:1.5,r:6,
+  tp:'#818cf8',ts:'#5a6a8c',tm:'#3d4a63',ac:'#6366f1',ac2:'#a855f7',ac3:'#06b6d4',pos:'#10b981',track:'#111a2e',
+  ff:"ui-monospace,'SF Mono',monospace",caps:1,ls:1.6,wl:500,wv:700,mode:'neon',
+  defs:`<filter id="f-gl" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`,
+  glow:'url(#f-gl)'},
+
+neuro:{n:'Neumorphic',rule:'выдавлено из фона · парная тень',dot:'#94a3b8',
+  bg:'#e4e9f0',surf:'#e4e9f0',bd:null,bdw:0,r:24,
+  tp:'#48566b',ts:'#96a2b6',tm:'#aab4c4',ac:'#6366f1',ac2:'#8b5cf6',ac3:'#0891b2',pos:'#4c9d80',track:'#ccd5e2',
+  ff:'Inter,system-ui,sans-serif',caps:0,ls:.5,wl:600,wv:700,mode:'neuro',
+  defs:`<filter id="f-no" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="-6" dy="-6" stdDeviation="7" flood-color="#fff" flood-opacity=".95"/><feDropShadow dx="7" dy="7" stdDeviation="8" flood-color="#a9b4c6" flood-opacity=".75"/></filter>
+  <filter id="f-ni" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="2" dy="2" stdDeviation="2.4" flood-color="#a9b4c6" flood-opacity=".85"/><feDropShadow dx="-2" dy="-2" stdDeviation="2.4" flood-color="#fff" flood-opacity=".95"/></filter>`,
+  surfFx:'url(#f-no)',inFx:'url(#f-ni)'},
+
+duotone:{n:'Duotone',rule:'два тона · иерархия прозрачностью',dot:'#ef4444',
+  bg:'#0a0a14',surf:'url(#g-dt)',bd:null,bdw:0,r:12,
+  tp:'#ffffff',ts:'rgba(255,255,255,.45)',tm:'rgba(255,255,255,.3)',ac:'rgba(255,255,255,.95)',ac2:'rgba(255,255,255,.78)',ac3:'rgba(255,255,255,.62)',pos:'rgba(255,255,255,.86)',track:'rgba(255,255,255,.15)',
+  ff:'Inter,system-ui,sans-serif',caps:1,ls:1.4,wl:500,wv:700,mode:'duotone',
+  defs:`<linearGradient id="g-dt" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3b1a78"/><stop offset="100%" stop-color="#0d4d3d"/></linearGradient>`},
+
+retro:{n:'Retro / Pixel',rule:'пиксельная сетка · без скруглений',dot:'#f0b429',
+  bg:'#0b0a02',surf:'#16140a',bd:'#f0b429',bdw:4,r:0,
+  tp:'#f0b429',ts:'#8a7420',tm:'#5c4d14',ac:'#f0b429',ac2:'#3ddc84',ac3:'#e0533d',pos:'#3ddc84',track:'#2a2410',
+  ff:"ui-monospace,'SF Mono',monospace",caps:1,ls:2,wl:700,wv:700,mode:'retro',crisp:1},
+
+clay:{n:'Claymorphism',rule:'пластилин · большие радиусы',dot:'#f472b6',
+  bg:'#f6efff',surf:'#ffffff',bd:null,bdw:0,r:32,
+  tp:'#6b21a8',ts:'#a07cd4',tm:'#c0a8e0',ac:'#a855f7',ac2:'#ec4899',ac3:'#06b6d4',pos:'#10b981',track:'#ede4fb',
+  ff:'Inter,system-ui,sans-serif',caps:0,ls:.4,wl:700,wv:800,mode:'clay',
+  defs:`<filter id="f-cl" x="-40%" y="-40%" width="180%" height="190%"><feDropShadow dx="0" dy="12" stdDeviation="11" flood-color="#8b3ddb" flood-opacity=".22"/></filter>`,
+  surfFx:'url(#f-cl)'},
+
+aurora:{n:'Aurora / Mesh',rule:'панели нет · сплошное поле',dot:'#a78bfa',
+  bg:'#0f0a24',surf:null,bd:null,bdw:0,r:0,
+  tp:'#ffffff',ts:'rgba(255,255,255,.9)',tm:'rgba(255,255,255,.74)',ac:'#4338ca',ac2:'#7c3aed',ac3:'#0e7490',pos:'#047857',bgAc:'#c7d2fe',bgAc2:'#ddd6fe',bgAc3:'#a5f3fc',bgPos:'#6ee7b7',track:'rgba(255,255,255,.22)',
+  ff:'Inter,system-ui,sans-serif',caps:1,ls:1.6,wl:500,wv:600,mode:'aurora',
+  defs:`<filter id="f-ab" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="26"/></filter>`,
+  deco:(w,h)=>`<ellipse cx="${w*.1}" cy="${h*.13}" rx="${w*.38}" ry="${h*.43}" fill="#4f46e5" opacity=".95" filter="url(#f-ab)"/><ellipse cx="${w*.91}" cy="${h*.17}" rx="${w*.33}" ry="${h*.39}" fill="#a78bfa" opacity=".82" filter="url(#f-ab)"/><ellipse cx="${w*.72}" cy="${h*.98}" rx="${w*.39}" ry="${h*.4}" fill="#0891b2" opacity=".8" filter="url(#f-ab)"/><ellipse cx="${w*.14}" cy="${h*.92}" rx="${w*.3}" ry="${h*.32}" fill="#db2777" opacity=".5" filter="url(#f-ab)"/>`},
+
+line:{n:'Line Art',rule:'только контур · ни одной заливки',dot:'#475569',
+  bg:'#ffffff',surf:'none',bd:'#1e3a5f',bdw:1.5,r:4,
+  tp:'#0f2740',ts:'#64748b',tm:'#94a3b8',ac:'#1e3a5f',ac2:'#2a5fa0',ac3:'#0f766e',pos:'#0f766e',track:'#dde5ee',
+  ff:'Inter,system-ui,sans-serif',caps:1,ls:2.4,wl:600,wv:500,mode:'line'},
+
+brutal:{n:'Brutalism',rule:'обводка 4 · тень без размытия',dot:'#111111',
+  bg:'#f5f242',surf:'#ffffff',bd:'#000000',bdw:4,r:0,
+  tp:'#000000',ts:'#000000',tm:'#000000',ac:'#000000',ac2:'#000000',ac3:'#000000',pos:'#000000',track:'#e8e8e8',
+  ff:'Inter,system-ui,sans-serif',caps:1,ls:1.6,wl:800,wv:900,mode:'brutal'},
+
+memphis:{n:'Memphis / 80s',rule:'конфетти вокруг · жирный контур',dot:'#e11d48',
+  bg:'#fffbea',surf:'#ffffff',bd:'#e11d48',bdw:3,r:10,
+  tp:'#e11d48',ts:'#7c3aed',tm:'#9a8fb0',ac:'#e11d48',ac2:'#7c3aed',ac3:'#0891b2',pos:'#16a34a',track:'#f3ecd8',
+  ff:'Inter,system-ui,sans-serif',caps:1,ls:1.4,wl:800,wv:800,mode:'memphis',
+  decoTop:1,
+  deco:(w,h)=>`<circle cx="${w-24}" cy="20" r="15" fill="#e11d48" opacity=".9"/><polygon points="16,${h-10} 28,${h-32} 40,${h-10}" fill="#0891b2" opacity=".9"/><rect x="${w-46}" y="${h-28}" width="30" height="6" rx="3" fill="#16a34a" transform="rotate(-24 ${w-31} ${h-25})"/><rect x="10" y="16" width="26" height="6" rx="3" fill="#7c3aed" transform="rotate(28 23 19)"/><circle cx="${w-16}" cy="${h*.55}" r="5" fill="#f59e0b"/>`}
+};
+
+/* ── тёмная краска для подписи на светлой заливке ── */
+const INK={flat:'#0d0f14',shadow:'#0f172a',iso:'#0d0f14',gradient:'#312e81',glass:'#08111f',
+  neon:'#04060d',neuro:'#3f4c60',duotone:'#1a0a2e',retro:'#16140a',clay:'#6b21a8',
+  aurora:'#231a47',line:'#0f2740',brutal:'#000000',memphis:'#1a1a1a'};
+Object.keys(ST).forEach(k=>ST[k].ink=INK[k]);
+
+/* ── МАТРИЦА: изометрия снята с производства после четырёх отказов ── */
+const ALLOW = {
+  divider: ['flat','shadow','gradient','glass','neon','neuro','duotone','retro','clay','aurora','line','brutal','memphis'],
+  chapter: ['flat','shadow','gradient','glass','neon','neuro','duotone','retro','clay','aurora','line','brutal','memphis'],
+  thanks: ['flat','shadow','gradient','glass','neon','neuro','duotone','retro','clay','aurora','line','brutal','memphis'],
+  agenda: ['flat','shadow','gradient','glass','neon','neuro','duotone','retro','clay','aurora','line','brutal','memphis'],
+  speaker: ['flat','shadow','gradient','glass','neon','neuro','duotone','retro','clay','aurora','line','brutal','memphis'],
+  faq: ['flat','shadow','gradient','glass','neon','neuro','duotone','retro','clay','aurora','line','brutal','memphis']
+};
+
+/* ── отдельный токен для линий: связей, осей, спины.
+   track остаётся заливкой жёлоба, где слабый контраст уместен ── */
+const LN={flat:'#39415a',shadow:'#c3cddb',gradient:'rgba(255,255,255,.5)',glass:'rgba(255,255,255,.48)',
+  neon:'#2a3a5c',neuro:'#b6c0cf',duotone:'rgba(255,255,255,.32)',retro:'#5c4d14',clay:'#d9c8f0',
+  aurora:'rgba(255,255,255,.45)',line:'#9db4cc',brutal:'#000000',memphis:'#b9a9d4',iso:'#39415a'};
+Object.keys(ST).forEach(k=>{ST[k].ln=LN[k]||ST[k].track;});
+
+/* ── фирменные признаки стилей: обводка и блик.
+   Вынесены в токены, чтобы при желании их тоже можно было перекрасить ── */
+const HARD={brutal:'#000000',memphis:'#1a1a1a'};
+const NEG ={flat:'#ef4444',shadow:'#dc2626',gradient:'#fca5a5',glass:'#f87171',neon:'#ef4444',
+  neuro:'#c76b6b',duotone:'rgba(255,255,255,.55)',retro:'#e0533d',clay:'#ec4899',
+  aurora:'#f87171',line:'#8b2020',brutal:'#000000',memphis:'#e11d48'};
+Object.keys(ST).forEach(k=>{ST[k].hard=HARD[k]||ST[k].ink; ST[k].hi='#ffffff'; ST[k].neg=NEG[k]||'#ef4444';});
+
+/* ══════════════════════════════════════════════════════════════
+   БРЕНД-СЛОЙ
+   Бренд задаёт входные цвета. Каждый стиль укладывает их в свою
+   цветовую модель: нейморфизм монохромен, дуотон двухцветен,
+   брутализм ахроматичен, мемфису нужны столкновения, ретро —
+   ограниченный набор. Одним сдвигом светлоты это не описать.
+   ══════════════════════════════════════════════════════════════ */
+const BRAND = {
+  accent : '#6366f1',
+  accent2: '#8b5cf6',
+  accent3: '#06b6d4',
+  positive:'#10b981',
+  enabled: false
+};
+
+/* ── работа с цветом ── */
+function toHsl(hex){
+  const m=/^#([0-9a-f]{6})$/i.exec(hex); if(!m)return null;
+  const n=parseInt(m[1],16), r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255;
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2;
+  if(mx===mn)return{h:0,s:0,l:l};
+  const dd=mx-mn, s=l>.5?dd/(2-mx-mn):dd/(mx+mn);
+  let h; if(mx===r)h=((g-b)/dd+(g<b?6:0)); else if(mx===g)h=(b-r)/dd+2; else h=(r-g)/dd+4;
+  return {h:h*60,s:s,l:l};
+}
+function toHex(h,s,l){
+  h=((h%360)+360)%360; s=Math.max(0,Math.min(1,s)); l=Math.max(0,Math.min(1,l));
+  const c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs((h/60)%2-1)), m=l-c/2;
+  let r,g,b;
+  if(h<60)[r,g,b]=[c,x,0]; else if(h<120)[r,g,b]=[x,c,0]; else if(h<180)[r,g,b]=[0,c,x];
+  else if(h<240)[r,g,b]=[0,x,c]; else if(h<300)[r,g,b]=[x,0,c]; else [r,g,b]=[c,0,x];
+  return '#'+[r,g,b].map(v=>Math.round((v+m)*255).toString(16).padStart(2,'0')).join('');
+}
+function shade(hex,k){
+  const c=toHsl(hex); if(!c)return hex;
+  return toHex(c.h,c.s,k>=1 ? c.l+(1-c.l)*(k-1) : c.l*k);
+}
+function rotate(hex,deg,sat,lig){
+  const c=toHsl(hex); if(!c)return hex;
+  return toHex(c.h+deg, sat!=null?sat:c.s, lig!=null?lig:c.l);
+}
+function mix(a,b,k){                       // k=0 → a, k=1 → b
+  const A=toHsl(a),B=toHsl(b); if(!A||!B)return a;
+  return toHex(A.h+(B.h-A.h)*k, A.s+(B.s-A.s)*k, A.l+(B.l-A.l)*k);
+}
+
+/* ── переходники: как каждый стиль принимает бренд ── */
+const ADAPT = {
+
+  /* светлота под фон — модель годится восьми стилям */
+  _shift(s,B,k){
+    s.ac =shade(B.accent ,k); s.ac2=shade(B.accent2,k);
+    s.ac3=shade(B.accent3,k); s.pos=shade(B.positive,k);
+  },
+  flat    :(s,B)=>ADAPT._shift(s,B,1),
+  shadow  :(s,B)=>ADAPT._shift(s,B,.82),
+  glass   :(s,B)=>{ADAPT._shift(s,B,1.28);
+    s_glass_a=shade(B.accent,1.05); s_glass_b=shade(B.accent3,1.05);},
+  neon    :(s,B)=>ADAPT._shift(s,B,1.1),
+  clay    :(s,B)=>{ADAPT._shift(s,B,1);
+    s.defs=s.defs.replace(/flood-color="#[0-9a-f]{6}"/i,'flood-color="'+shade(B.accent,.85)+'"');},
+  line    :(s,B)=>ADAPT._shift(s,B,.72),
+  aurora  :(s,B)=>ADAPT._shift(s,B,.78),
+
+  /* градиент: цвет живёт ещё и в заливках, их надо пересобрать */
+  gradient:(s,B)=>{
+    ADAPT._shift(s,B,1);
+    const a=B.accent, mid=mix(B.accent,B.accent3,.5), c=B.accent3;
+    s.defs=`<linearGradient id="g-card" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${a}"/><stop offset="55%" stop-color="${mid}"/><stop offset="100%" stop-color="${c}"/></linearGradient>
+  <linearGradient id="g-bar" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="${a}"/><stop offset="100%" stop-color="${c}"/></linearGradient>
+  <linearGradient id="g-barv" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="${a}"/><stop offset="100%" stop-color="${c}"/></linearGradient>`;
+  },
+
+  /* нейморфизм монохромен: цвет несёт поверхность, акцент один,
+     остальные роли — тот же тон другой светлоты */
+  neuro:(s,B)=>{
+    const h=toHsl(B.accent);
+    s.surf=s.bg=toHex(h.h,.14,.90);              // поверхность чуть тонирована брендом
+    s.track=toHex(h.h,.12,.79);
+    s.ln   =toHex(h.h,.12,.74);
+    s.tp   =toHex(h.h,.18,.32); s.ts=toHex(h.h,.12,.60); s.tm=toHex(h.h,.10,.70);
+    s.ink  =s.tp;
+    s.ac   =toHex(h.h,Math.max(h.s,.5),.55);
+    s.ac2  =toHex(h.h,Math.max(h.s,.5),.44);     // тот же тон, другая светлота
+    s.ac3  =toHex(h.h,Math.max(h.s,.5),.66);
+    s.pos  =toHex(h.h,.34,.50);
+    s.defs=s.defs.replace(/flood-color="#[0-9a-f]{6}"/gi,'flood-color="'+toHex(h.h,.14,.72)+'"');
+  },
+
+  /* дуотон двухцветен по определению: два крайних тона, остальное прозрачностью */
+  duotone:(s,B)=>{
+    const from=shade(B.accent,.55), to=shade(B.accent3,.45);
+    s.defs=`<linearGradient id="g-dt" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${from}"/><stop offset="100%" stop-color="${to}"/></linearGradient>`;
+    s.ac='rgba(255,255,255,.95)'; s.ac2='rgba(255,255,255,.78)';
+    s.ac3='rgba(255,255,255,.62)'; s.pos='rgba(255,255,255,.86)';
+    s.bg=shade(B.accent,.18);
+  },
+
+  /* брутализм ахроматичен: бренд заходит только сигналом */
+  brutal:(s,B)=>{ s.pos=B.accent; },
+
+  /* мемфису нужны столкновения: достраиваем тона по кругу */
+  memphis:(s,B)=>{
+    const h=toHsl(B.accent), S=Math.max(h.s,.72), L=.48;
+    s.ac =toHex(h.h,       S,L);
+    s.ac2=toHex(h.h+152,   S,L);
+    s.ac3=toHex(h.h+ 68,   S,L);
+    s.pos=toHex(h.h+218,   S,L);
+    s.bg =toHex(h.h+ 40,.62,.96);
+  },
+
+  /* ретро: ограниченный набор, высокая насыщенность, фиксированная светлота */
+  retro:(s,B)=>{
+    const h=toHsl(B.accent), S=.78, L=.56;
+    s.ac =toHex(h.h,      S,L);
+    s.ac2=toHex(h.h+128,  S,L);
+    s.ac3=toHex(h.h+ 40,  S,L);
+    s.pos=toHex(h.h+128,  S,L);
+    s.bd =s.ac;
+    s.bg =toHex(h.h,.42,.04); s.surf=toHex(h.h,.30,.07);
+    s.tp =s.ac; s.ts=toHex(h.h,S,.34); s.tm=toHex(h.h,S,.24);
+  }
+};
+
+function applyBrand(){
+  if(!BRAND.enabled) return;
+  Object.keys(ST).forEach(k=>{
+    const fn=ADAPT[k]; if(typeof fn==='function') fn(ST[k],BRAND);
+  });
+  // светлые варианты для стилей без панели пересчитываем после переходников
+  Object.keys(ST).forEach(k=>{const s=ST[k];
+    if(s.bgAc ) s.bgAc =shade(s.ac ,1.9);
+    if(s.bgAc2) s.bgAc2=shade(s.ac2,1.9);
+    if(s.bgAc3) s.bgAc3=shade(s.ac3,1.9);
+    if(s.bgPos) s.bgPos=shade(s.pos,1.9);
+  });
+}
+applyBrand();
+
+
+const W=300,H=190,PAD=14;
+
+/* ── помощники ── */
+const t=(s,str)=>s.caps?str.toUpperCase():str;
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+function txt(s,x,y,str,size,weight,fill,ls){
+  return `<text x="${x}" y="${y}" fill="${fill}" font-family="${s.ff}" font-size="${size}" font-weight="${weight}"${ls!=null?` letter-spacing="${ls}"`:''}>${esc(str)}</text>`;
+}
+// подложка карточки по правилам стиля
+function surface(s,x,y,w,h){
+  if(s.mode==='aurora') return '';
+  if(s.mode==='iso'){
+    const{dx,dy}=s;
+    return `<polygon points="${x+w},${y} ${x+w+dx},${y+dy} ${x+w+dx},${y+h+dy} ${x+w},${y+h}" fill="#2c3352"/>`+
+           `<polygon points="${x},${y} ${x+dx},${y+dy} ${x+w+dx},${y+dy} ${x+w},${y}" fill="#414a75"/>`+
+           `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${s.surf}"/>`;
+  }
+  if(s.mode==='brutal'){
+    return `<rect x="${x+10}" y="${y+10}" width="${w}" height="${h}" fill="#000"/>`+
+           `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${s.surf}" stroke="${s.bd}" stroke-width="${s.bdw}"/>`;
+  }
+  const fx=s.surfFx?` filter="${s.surfFx}"`:'';
+  const gl=s.glow?` filter="${s.glow}"`:'';
+  const st=s.bd?` stroke="${s.bd}" stroke-width="${s.bdw}"`:'';
+  const fill=s.surf==='none'?'none':s.surf;
+  let out=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${s.r}" fill="${fill}"${st}${fx||gl}/>`;
+  if(s.mode==='glass') out+=`<path d="M${x+18} ${y+1.5} H${x+w-18}" stroke="#fff" stroke-opacity=".5" stroke-width="1.5" stroke-linecap="round"/>`;
+  if(s.mode==='clay') out+=`<rect x="${x+12}" y="${y+9}" width="${w-24}" height="26" rx="13" fill="#fff" fill-opacity=".85"/>`;
+  return out;
+}
+// прямоугольный «полосатый» примитив — используется в барах и колонках
+function shape(s,x,y,w,h,color,horiz){
+  const gl=s.glow?` filter="${s.glow}"`:'';
+  switch(s.mode){
+    case 'line':   return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="none" stroke="${color}" stroke-width="1.5"/>`;
+    case 'neon':   return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="${color}" fill-opacity=".16" stroke="${color}" stroke-width="1.3"${gl}/>`;
+    case 'retro':{ // ступенчатые блоки
+      let o='',step=horiz?9:0;
+      if(horiz){for(let i=0;i<Math.floor(w/9);i++)o+=`<rect x="${x+i*9}" y="${y}" width="7" height="${h}" fill="${color}"/>`;}
+      else{for(let i=0;i<Math.floor(h/9);i++)o+=`<rect x="${x}" y="${y+h-(i+1)*9}" width="${w}" height="7" fill="${color}"/>`;}
+      return o;}
+    case 'iso':{const d=8,e=-5;
+      return `<polygon points="${x+w},${y} ${x+w+d},${y+e} ${x+w+d},${y+h+e} ${x+w},${y+h}" fill="${color}" opacity=".55"/>`+
+             `<polygon points="${x},${y} ${x+d},${y+e} ${x+w+d},${y+e} ${x+w},${y}" fill="${color}" opacity=".78"/>`+
+             `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${color}"/>`;}
+    case 'clay':   return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.min(w,h)/2}" fill="${color}"/>`+
+                          (horiz?`<rect x="${x+3}" y="${y+2}" width="${Math.max(w-6,0)}" height="${Math.max(h*.32,2)}" rx="${h*.16}" fill="#fff" fill-opacity=".3"/>`:'');
+    case 'brutal': return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${color}" stroke="#000" stroke-width="2"/>`;
+    case 'neuro':  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.min(w,h)/2}" fill="${color}"/>`;
+    case 'gradient':return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${horiz?'url(#g-bar)':'url(#g-barv)'}"/>`;
+    case 'glass':  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="${color}" fill-opacity=".42" stroke="${color}" stroke-opacity=".7" stroke-width="1"/>`;
+    case 'memphis':return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${color}" stroke="#1a1a1a" stroke-width="1.5"/>`;
+    default:       return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${color}"/>`;
+  }
+}
+/* плашка-дельта: у каждого стиля своя заливка, контраст текста гарантирован */
+function chip(s,x,y,label){
+  const w=98,h=26,gl=s.glow?` filter="${s.glow}"`:'';
+  const tx=x+13,ty=y+17.5;
+  const T=(fill,size)=>txt(s,tx,ty,label,size||12.5,600,fill,null);
+  switch(s.mode){
+    case 'aurora': return txt(s,x,ty,label,12.5,600,'rgba(255,255,255,.92)',null);
+    case 'line':   return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="none" stroke="${s.pos}" stroke-width="1.2"/>`+T(s.pos);
+    case 'neon':   return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="none" stroke="${s.pos}" stroke-width="1.2"${gl}/>`+txt(s,tx,ty,label,12.5,600,s.pos,null).replace('<text ',`<text filter="${s.glow}" `);
+    case 'brutal': return `<rect x="${x}" y="${y}" width="${w+14}" height="${h+3}" fill="#000"/>`+txt(s,tx,ty+1.5,label,12.5,800,'#fff',null);
+    case 'clay':   return `<rect x="${x}" y="${y-2}" width="${w+10}" height="${h+4}" rx="${(h+4)/2}" fill="${s.ac}" filter="${s.surfFx}"/>`+
+                          `<rect x="${x+5}" y="${y+1}" width="${w}" height="9" rx="4.5" fill="#fff" fill-opacity=".28"/>`+txt(s,tx,ty,label,12.5,700,'#fff',null);
+    case 'memphis':return `<rect x="${x}" y="${y-2}" width="${w+8}" height="${h+4}" rx="${(h+4)/2}" fill="${s.pos}"/>`+txt(s,tx,ty,label,12.5,700,'#fff',null);
+    case 'neuro':  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="13" fill="${s.surf}" filter="${s.inFx}"/>`+T(s.pos);
+    case 'shadow': return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="13" fill="#e7f7ef"/>`+T('#047857');
+    case 'glass':  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="13" fill="${s.pos}" fill-opacity=".2" stroke="${s.pos}" stroke-opacity=".45" stroke-width="1"/>`+T(s.pos);
+    case 'gradient':
+    case 'duotone':return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="#fff" fill-opacity=".2"/>`+T('#fff');
+    case 'retro':{ // дельта шкалой блоков вместо текста
+      let o='';for(let i=0;i<5;i++)o+=`<rect x="${x+i*12}" y="${y+4}" width="9" height="17" fill="${i<4?s.pos:'#2a5c40'}"/>`;
+      return o+txt(s,x+66,ty,'+23%',12.5,700,s.pos,null);}
+    case 'iso':    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${s.pos}" fill-opacity=".2"/>`+T(s.pos);
+    default:       return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="${s.pos}" fill-opacity=".16"/>`+T(s.pos);
+  }
+}
+function track(s,x,y,w,h){
+  if(s.mode==='line')  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="none" stroke="${s.ln}" stroke-width="1"/>`;
+  if(s.mode==='neuro') return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h/2}" fill="${s.surf}" filter="${s.inFx}"/>`;
+  if(s.mode==='brutal')return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${s.track}" stroke="#000" stroke-width="2"/>`;
+  if(s.mode==='retro') return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${s.track}"/>`;
+  const r=s.mode==='clay'?h/2:3;
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${s.track}"/>`;
+}
+function frame(s){
+  let o=`<rect width="${W}" height="${H}" fill="${s.bg}"/>`;
+  if(s.deco&&!s.decoTop) o+=s.deco(W,H);
+  return o;
+}
+function wrapSvg(s,inner){
+  const cr=s.crisp?' shape-rendering="crispEdges"':'';
+  const top=(s.deco&&s.decoTop)?s.deco(W,H):'';
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"${cr}>${s.defs?`<defs>${s.defs}</defs>`:''}${inner}${top}</svg>`;
+}
+
+/* ═══════ ЭЛЕМЕНТЫ ═══════ */
+
+
+/* ── шеврон: форма зависит от стиля ── */
+function chev(s,x,y,w,h,c,first){
+  const n=(s.mode==='retro'||s.mode==='brutal')?0:11, gl=s.glow?` filter="${s.glow}"`:'';
+  if(s.mode==='clay')
+    return `<rect x="${x}" y="${y}" width="${w-5}" height="${h}" rx="${h/2}" fill="${c}"/>`+
+           `<rect x="${x+7}" y="${y+3}" width="${w-19}" height="${(h*.28).toFixed(1)}" rx="${(h*.14).toFixed(1)}" fill="#fff" fill-opacity=".3"/>`;
+  let pts;
+  if(n===0) pts=`${x},${y} ${x+w},${y} ${x+w},${y+h} ${x},${y+h}`;
+  else if(first) pts=`${x},${y} ${x+w-n},${y} ${x+w},${y+h/2} ${x+w-n},${y+h} ${x},${y+h}`;
+  else pts=`${x},${y} ${x+w-n},${y} ${x+w},${y+h/2} ${x+w-n},${y+h} ${x},${y+h} ${x+n},${y+h/2}`;
+  if(s.mode==='line')   return `<polygon points="${pts}" fill="none" stroke="${c}" stroke-width="1.6"/>`;
+  if(s.mode==='neon')   return `<polygon points="${pts}" fill="${c}" fill-opacity=".16" stroke="${c}" stroke-width="1.4"${gl}/>`;
+  if(s.mode==='brutal') return `<polygon points="${pts}" fill="${c}" stroke="#000" stroke-width="3"/>`;
+  if(s.mode==='memphis')return `<polygon points="${pts}" fill="${c}" stroke="#1a1a1a" stroke-width="1.5"/>`;
+  if(s.mode==='iso'){const d=7,e=-5;
+    return `<polygon points="${x},${y} ${x+d},${y+e} ${x+w+d},${y+e} ${x+w},${y}" fill="${c}" opacity=".72"/>`+
+           `<polygon points="${x+w},${y} ${x+w+d},${y+e} ${x+w+d},${y+h+e} ${x+w},${y+h}" fill="${c}" opacity=".48"/>`+
+           `<polygon points="${pts}" fill="${c}"/>`;}
+  const op=(s.mode==='glass'||s.mode==='aurora')?.5:1;
+  return `<polygon points="${pts}" fill="${c}" fill-opacity="${op}"${s.mode==='glass'?` stroke="${c}" stroke-opacity=".7" stroke-width="1"`:''}/>`;
+}
+/* ── узел-коробка ── */
+function node(s,x,y,w,h,c,label,fs){
+  const gl=s.glow?` filter="${s.glow}"`:'';
+  const rr=s.mode==='clay'?h/2:s.mode==='retro'||s.mode==='brutal'?0:6;
+  let o;
+  if(s.mode==='line')       o=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rr}" fill="none" stroke="${c}" stroke-width="1.5"/>`;
+  else if(s.mode==='neon')  o=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rr}" fill="${c}" fill-opacity=".14" stroke="${c}" stroke-width="1.3"${gl}/>`;
+  else if(s.mode==='brutal'){o=`<rect x="${x+4}" y="${y+4}" width="${w}" height="${h}" fill="#000"/><rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff" stroke="#000" stroke-width="3"/>`;c='#ffffff';}
+  else if(s.mode==='memphis')o=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rr}" fill="${c}" stroke="#1a1a1a" stroke-width="1.5"/>`;
+  else if(s.mode==='iso'){const d=6,e=-4;
+    o=`<polygon points="${x},${y} ${x+d},${y+e} ${x+w+d},${y+e} ${x+w},${y}" fill="${c}" opacity=".72"/>`+
+      `<polygon points="${x+w},${y} ${x+w+d},${y+e} ${x+w+d},${y+h+e} ${x+w},${y+h}" fill="${c}" opacity=".48"/>`+
+      `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`;}
+  else{const op=(s.mode==='glass'||s.mode==='aurora')?.5:1;
+    o=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rr}" fill="${c}" fill-opacity="${op}"${s.mode==='glass'?` stroke="${c}" stroke-opacity=".65" stroke-width="1"`:''}/>`;}
+  const tc=(s.mode==='brutal'&&lumOf(s,c)<.5)?'#fff':nodeTx(s,c);
+  if(label)o+=txt(s,x+w/2,y+h/2+(fs||10)*0.25,t(s,label),fs||10,700,tc,null).replace('<text ','<text text-anchor="middle" ');
+  return o;
+}
+function lumOf(s,c){
+  const darkBg=['flat','iso','gradient','glass','neon','duotone','retro','aurora'].includes(s.mode);
+  if(/^url\(/.test(c))return null;              // градиент оценить нельзя
+  let m=/^#([0-9a-f]{3})$/i.exec(c);             // короткая запись: #fff
+  if(m){const h=m[1],n=parseInt(h[0]+h[0]+h[1]+h[1]+h[2]+h[2],16);
+    return ((n>>16&255)*.299+(n>>8&255)*.587+(n&255)*.114)/255;}
+  m=/^#([0-9a-f]{6})$/i.exec(c);
+  if(m){const n=parseInt(m[1],16);
+    const l=((n>>16&255)*.299+(n>>8&255)*.587+(n&255)*.114)/255;
+    return (s.mode==='glass')? l*0.62 : l;}
+  const damp=(s.mode==='glass')?0.5:1;          // полупрозрачная заливка поверх тёмного
+  m=/rgba?\(([^)]+)\)/.exec(c);
+  if(m){const p=m[1].split(',').map(Number),a=p[3]===undefined?1:p[3];
+    const l=(p[0]*.299+p[1]*.587+p[2]*.114)/255;
+    return darkBg? l*a*damp : l;}
+  return null;
+}
+function onNode(s,c){return s.mode==='brutal' ? '#000' : nodeTx(s,c);}  // узел brutal всегда белый
+function bgTx(s,c){                                   // текст прямо на фоне, без фигуры под ним
+  if(s.surf!==null)return c;                          // есть панель — цвет как есть
+  if(c===s.pos&&s.bgPos)return s.bgPos;               // у стилей без панели — светлые варианты,
+  if(c===s.ac &&s.bgAc )return s.bgAc;                // иначе смысл цвета теряется
+  if(c===s.ac2&&s.bgAc2)return s.bgAc2;
+  if(c===s.ac3&&s.bgAc3)return s.bgAc3;
+  return s.tp;
+}
+function nodeTx(s,c){
+  if(s.mode==='line'||s.mode==='neon')return c;
+  const L=lumOf(s,c);
+  return (L!==null&&L>.62) ? s.ink : '#fff';
+}
+function conn(s,x1,y1,x2,y2){
+  const d=s.mode==='retro'?'':' stroke-dasharray="3 3"';
+  return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${s.ln}" stroke-width="${s.mode==='brutal'?2.5:1.2}"${d}/>`;
+}
+
+
+
+
+
+
+/* ══════ ПЕРЕНОС СТРОК И РОСТ ХОЛСТА ══════ */
+
+/* Разбить строку не более чем на maxLines строк по ширине maxW.
+   Односложное не переносится — для него остаётся уменьшение кегля. */
+function wrap(str,maxW,fs,maxLines){
+  maxLines=maxLines||2;
+  const per=fs*0.55;
+  if(str.length*per<=maxW) return [str];
+  const words=String(str).split(/\s+/);
+  if(words.length===1) return [str];
+  const lines=[]; let cur='';
+  for(let i=0;i<words.length;i++){
+    const cand=cur?cur+' '+words[i]:words[i];
+    if(!cur || cand.length*per<=maxW){ cur=cand; }
+    else{
+      lines.push(cur); cur=words[i];
+      if(lines.length===maxLines-1){ cur=words.slice(i).join(' '); break; }
+    }
+  }
+  lines.push(cur);
+  return lines.slice(0,maxLines);
+}
+/* Уложить набор подписей: сначала перенос, затем — если односложное
+   всё равно не влезает — единый уменьшенный кегль на весь набор */
+function fitLines(labels,maxW,fs,maxLines,minFs){
+  maxLines=maxLines||2; minFs=minFs||fs*0.72;
+  let f=fs, out;
+  for(;;){
+    out=labels.map(l=>wrap(l,maxW,f,maxLines));
+    const over=out.some(ls=>ls.some(ln=>ln.length*f*0.55>maxW));
+    if(!over || f<=minFs) break;
+    f-=0.5;
+  }
+  return {lines:out, fs:f, n:out.reduce((m,ls)=>Math.max(m,ls.length),1)};
+}
+
+/* Сколько строк понадобится набору подписей */
+function maxLinesOf(labels,maxW,fs,cap){
+  return labels.reduce((m,l)=>Math.max(m,wrap(l,maxW,fs,cap||2).length),1);
+}
+/* Отрисовать многострочную подпись */
+function txtLines(s,x,y,lines,fs,weight,fill,anchor,lh){
+  lh=lh||fs*1.25;
+  return lines.map((ln,i)=>{
+    let t=txt(s,x,y+i*lh,ln,fs,weight,fill,null);
+    if(anchor) t=t.replace('<text ','<text text-anchor="'+anchor+'" ');
+    return t;
+  }).join('');
+}
+/* Холст переменной высоты */
+function wrapSvgH(s,inner,hh){
+  const cr=s.crisp?' shape-rendering="crispEdges"':'';
+  const top=(s.deco&&s.decoTop)?s.deco(W,hh):'';
+  return `<svg viewBox="0 0 ${W} ${hh}" xmlns="http://www.w3.org/2000/svg"${cr}>${s.defs?`<defs>${s.defs}</defs>`:''}${inner}${top}</svg>`;
+}
+function frameH(s,hh){
+  let o=`<rect width="${W}" height="${hh}" fill="${s.bg}"/>`;
+  if(s.deco&&!s.decoTop) o+=s.deco(W,hh);
+  return o;
+}
+
+/* ── Столбчатый график: высота растёт под двухстрочные подписи ── */
+function dColumn2(s,d){
+  const x=PAD, y=PAD, w=W-PAD*2;
+  const n=d.bars.length;
+  const ox=x+26, pw=w-58;
+  const bw=Math.max(10,Math.floor(pw/n)-10);
+  const L=fitLines(d.bars.map(b=>b.label), bw+8, 10, 2, 7.5);
+  const labFs=L.fs, labH=L.n*labFs*1.25;
+
+  // при одной строке холст остаётся прежним, 190; рост только когда нужен
+  const plotH=72;
+  const H2=PAD + 22 + 28 + plotH + 12 + labH + 16 + PAD;
+  const h=H2-PAD*2;
+
+  let o=frameH(s,H2)+surface(s,x,y,w,h);
+  o+=txt(s,x+20,y+22,t(s,d.title),12,s.wl,s.ts,s.ls);
+  const oy=y+22, baseY=oy+28+plotH, mx=Math.max(...d.bars.map(b=>b.v));
+  o+=`<line x1="${ox}" y1="${baseY}" x2="${ox+pw}" y2="${baseY}" stroke="${s.ln}" stroke-width="${s.mode==='brutal'?3:1}"/>`;
+  d.bars.forEach((b,i)=>{
+    const bh=Math.round(plotH*b.v/mx), bx=ox+i*(bw+10);
+    const c=b.hi?s.ac:s.ac3;
+    o+=shape(s,bx,baseY-bh,bw,bh,c,0);
+    o+=txtLines(s,bx+bw/2,baseY+12+labFs*0.72,L.lines[i],labFs,s.wl,
+        b.hi?bgTx(s,s.ac):s.tm,'middle',labFs*1.25);
+  });
+  return wrapSvgH(s,o,H2);
+}
+
+const SETS=[
+ ['Помещается в строку', ['МКИ','Минцифры','Минздрав','МОН']],
+ ['Одно длинное слово',  ['МКИ','Минпросвещения','Минздрав','МОН']],
+ ['Составные названия',  ['МКИ','НАО Госкорпорация','Опытная эксплуатация','Минздрав']],
+ ['Всё длинное',         ['Минпросвещения','НАО Госкорпорация','Опытная эксплуатация','Сопровождение систем']],
+];
+const STYLES=['flat','shadow','line','clay'];
+const o=document.getElementById('o');
+SETS.forEach(([nm,labels])=>{
+  const h2=document.createElement('h2'); h2.textContent=nm; o.appendChild(h2);
+  const row=document.createElement('div'); row.className='row';
+  STYLES.forEach(k=>{
+    const d={title:'Нагрузка по ведомствам',bars:labels.map((l,i)=>({label:l,v:6.4-i*1.1,hi:i===0}))};
+    const svg=dColumn2(ST[k],d);
+    const hh=+/viewBox="0 0 300 ([0-9.]+)"/.exec(svg)[1];
+    const bw=Math.max(10,Math.floor((300-28-58)/labels.length)-10);
+    const L=fitLines(labels,bw+8,10,2,7.5);
+    const c=document.createElement('div'); c.className='c';
+    c.innerHTML='<div class="v" style="background:'+ST[k].bg+'">'+svg+'</div>'+
+      '<div class="m"><div class="mn">'+ST[k].n+'</div>'+
+      '<div class="ms">холст 300×'+hh.toFixed(0)+' · кегль '+L.fs+' · строк '+L.n+'</div></div>';
+    row.appendChild(c);
+  });
+  o.appendChild(row);
+});
+</script></body></html>

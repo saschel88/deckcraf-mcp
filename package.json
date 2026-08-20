@@ -1,0 +1,16 @@
+{
+  "name": "deckcraft-mcp",
+  "version": "1.0.0",
+  "description": "MCP-сервер библиотеки SVG-элементов: 52 элемента в 13 стилях",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "bin": { "deckcraft-mcp": "src/index.js" },
+  "scripts": {
+    "start": "node src/index.js",
+    "check": "node tools/audit.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0"
+  }
+}
