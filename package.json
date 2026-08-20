@@ -8,7 +8,10 @@
   "bin": { "deckcraft-mcp": "src/index.js" },
   "scripts": {
     "start": "node src/index.js",
-    "check": "node tools/audit.js"
+    "check": "node tools/audit.js --snapshot tools/baseline.json",
+    "baseline": "node tools/audit.js --snapshot tools/baseline.json --write",
+    "data": "node tools/data-check.js",
+    "smoke": "node tools/smoke.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0"

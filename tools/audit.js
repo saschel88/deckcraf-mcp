@@ -1,6 +1,12 @@
 /* Прогон 676 пар через шесть проверок.
    Без аргументов — сводка. С --snapshot <файл> ещё и слепок разметки,
-   чтобы сравнить отрисовку образцов до и после правок в elements.js. */
+   чтобы сравнить отрисовку образцов до и после правок в elements.js.
+   Слепок сличается, если файл есть, и записывается, если файла нет
+   либо передан --write.
+
+     npm run check      сличить с tools/baseline.json
+     npm run baseline   пересобрать слепок — только осознанно, когда
+                        отрисовка образца изменена намеренно */
 
 import { createHash } from 'node:crypto';
 import { writeFileSync, readFileSync, existsSync } from 'node:fs';
@@ -39,7 +45,8 @@ for (const п of порядок) {
 const и = process.argv.indexOf('--snapshot');
 if (и > 0) {
   const файл = process.argv[и + 1];
-  if (existsSync(файл)) {
+  const перезаписать = process.argv.includes('--write');
+  if (existsSync(файл) && !перезаписать) {
     const было = JSON.parse(readFileSync(файл, 'utf8'));
     const разошлись = Object.keys(слепок).filter(k => было[k] !== слепок[k]);
     const пропали = Object.keys(было).filter(k => !(k in слепок));
