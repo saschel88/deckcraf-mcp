@@ -107,9 +107,10 @@ function elColumn(s,дан){
   const заг=строка(дан&&дан.title,ОБР_column.title);
   o+=txt(s,ox,oy+12,t(s,ужать(заг,pw,12,9)[0]),12,s.wl,s.ts,s.ls);
   const ряд=ряды(дан&&дан.bars,ОБР_column.bars,7);
-  // масштаб — от максимума переданных значений, но не меньше 100: договор просит
-  // не нормировать, а привычные проценты (0–100) при этом ведут себя как раньше
-  const max=Math.max(100,...ряд.map(б=>Number(б.v)||0));
+  const знач=ряд.map(б=>Math.max(0,Number(б.v)||0));
+  // масштаб считается от максимума переданных значений, нормировать не нужно (договор);
+  // если все значения нулевые или отрицательные, шкала не делится на ноль
+  const max=Math.max(1,...знач);
   const bw=Math.floor(pw/ряд.length)-10,baseY=oy+28+ph;
   // ось
   if(s.mode==='line'||s.mode==='flat'||s.mode==='glass'||s.mode==='aurora')
@@ -120,7 +121,7 @@ function elColumn(s,дан){
   // подписи — общий кегль на ряд, ширина берётся из числа столбцов, а не константой
   const [метки,мfs]=ужатьНабор(ряд.map(б=>t(s,String(б.label==null?'':б.label))),bw,11,7);
   ряд.forEach((б,i)=>{
-    const v=Math.max(0,Number(б.v)||0),hi=!!б.hi;
+    const v=знач[i],hi=!!б.hi;
     const bh=Math.round(ph*v/max),bx=ox+i*(bw+10);
     const col=hi?s.ac:(s.mode==='duotone'||s.mode==='gradient'?s.ac2:s.mode==='memphis'?пал[i%5]:s.ac3);
     o+=shape(s,bx,baseY-bh,bw,bh,col,0);
