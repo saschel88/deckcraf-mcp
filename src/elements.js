@@ -1406,7 +1406,8 @@ function elMicro(s,дан){
     }else{
       o+=`<ellipse cx="${cxm}" cy="${dy+5}" rx="${rx}" ry="4.5" fill="none" stroke="${sc}" stroke-width="1.5"/>`;
       o+=`<path d="M ${sx+8} ${dy+5} V ${dy+28} A ${rx} 4.5 0 0 0 ${sx+sw2-8} ${dy+28} V ${dy+5}" fill="none" stroke="${sc}" stroke-width="1.5"/>`;
-      o+=txt(s,cxm,dy+25,t(s,'БД'),8,600,s.ts,null).replace('<text ','<text text-anchor="middle" ');
+      // dy+25 держал зазор до эллипса в 9.7px при норме 10 — промах в три десятых пикселя
+      o+=txt(s,cxm,dy+25.3,t(s,'БД'),8,600,s.ts,null).replace('<text ','<text text-anchor="middle" ');
     }
   });
   return wrapSvg(s,o);
