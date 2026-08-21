@@ -435,41 +435,67 @@ function elSpark(s){
 }
 
 // 13 ── Bubble
-function elBubble(s){
+const ОБР_bub={title:'Портфель направлений',bubbles:[
+  {label:'AI',x:26,y:44,r:30},{label:'Инт.',x:56,y:30,r:22},
+  {label:'API',x:78,y:52,r:17},{label:'Гос',x:44,y:72,r:24},
+  {label:'SMB',x:72,y:85,r:13},{label:'IoT',x:16,y:82,r:11}]};
+function elBubble(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  o+=txt(s,x+20,y+24,t(s,'Портфель направлений'),12,s.wl,s.ts,s.ls);
-  const B=[{cx:.26,cy:.44,r:30,l:'AI',c:s.ac},{cx:.56,cy:.3,r:22,l:'Инт.',c:s.ac3},
-           {cx:.78,cy:.52,r:17,l:'API',c:s.ac2},{cx:.44,cy:.72,r:24,l:'Гос',c:s.pos},
-           {cx:.72,cy:.85,r:13,l:'SMB',c:s.ac3},{cx:.16,cy:.82,r:11,l:'IoT',c:s.ac2}];
+  const заг=строка(дан&&дан.title,ОБР_bub.title);
+  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  // цвета не входят в договор, берутся из стиля по кругу; исходный образец
+  // раскрашен вручную (ac, ac3, ac2, pos, ac3, ac2) — палитра ниже воспроизводит его дословно
+  const пал=[s.ac,s.ac3,s.ac2,s.pos,s.ac3,s.ac2,s.tm];
+  // радиус — из договора границы 8–30, x/y — доли области построения 0–100 (как у scat)
+  const B=ряды(дан&&дан.bubbles,ОБР_bub.bubbles,7).map((б,i)=>[
+    String(б.label==null?'':б.label),Number(б.x)||0,Number(б.y)||0,
+    Math.max(8,Math.min(30,Number(б.r)||0)),пал[i%пал.length]]);
   const ox=x+16,oy=y+42,pw=w-32,ph=h-58;
   const gl=s.glow?` filter="${s.glow}"`:'';
-  B.forEach(b=>{
-    const bx=+(ox+b.cx*pw).toFixed(1),by=+(oy+b.cy*ph).toFixed(1);
-    if(s.mode==='line')       o+=`<circle cx="${bx}" cy="${by}" r="${b.r}" fill="none" stroke="${b.c}" stroke-width="1.5"/>`;
-    else if(s.mode==='brutal')o+=`<circle cx="${bx}" cy="${by}" r="${b.r}" fill="${s.hard}" stroke="${s.hard}" stroke-width="3"/>`;
-    else if(s.mode==='retro') o+=`<rect x="${bx-b.r}" y="${by-b.r}" width="${b.r*2}" height="${b.r*2}" fill="${b.c}" fill-opacity=".7"/>`;
-    else if(s.mode==='memphis')o+=`<circle cx="${bx}" cy="${by}" r="${b.r}" fill="${b.c}" stroke="${s.hard}" stroke-width="1.5"/>`;
-    else if(s.mode==='neon')  o+=`<circle cx="${bx}" cy="${by}" r="${b.r}" fill="${b.c}" fill-opacity=".14" stroke="${b.c}" stroke-width="1.3"${gl}/>`;
-    else{o+=`<circle cx="${bx}" cy="${by}" r="${b.r}" fill="${b.c}" fill-opacity="${s.mode==='glass'||s.mode==='aurora'?.5:.8}"/>`;
-      if(s.mode==='clay')o+=`<ellipse cx="${bx}" cy="${(by-b.r*.42).toFixed(1)}" rx="${(b.r*.5).toFixed(1)}" ry="${(b.r*.24).toFixed(1)}" fill="${s.hi}" fill-opacity=".32"/>`;}
-    if(b.r>14){const tc=nodeTx(s,b.c);
-      o+=txt(s,bx,by+4,t(s,b.l),b.r>24?12:10,700,tc,null).replace('<text ','<text text-anchor="middle" ');}
+  B.forEach(([l,X,Y,r,c])=>{
+    const bx=+(ox+pw*X/100).toFixed(1),by=+(oy+ph*Y/100).toFixed(1);
+    if(s.mode==='line')       o+=`<circle cx="${bx}" cy="${by}" r="${r}" fill="none" stroke="${c}" stroke-width="1.5"/>`;
+    else if(s.mode==='brutal')o+=`<circle cx="${bx}" cy="${by}" r="${r}" fill="${s.hard}" stroke="${s.hard}" stroke-width="3"/>`;
+    else if(s.mode==='retro') o+=`<rect x="${bx-r}" y="${by-r}" width="${r*2}" height="${r*2}" fill="${c}" fill-opacity=".7"/>`;
+    else if(s.mode==='memphis')o+=`<circle cx="${bx}" cy="${by}" r="${r}" fill="${c}" stroke="${s.hard}" stroke-width="1.5"/>`;
+    else if(s.mode==='neon')  o+=`<circle cx="${bx}" cy="${by}" r="${r}" fill="${c}" fill-opacity=".14" stroke="${c}" stroke-width="1.3"${gl}/>`;
+    else{o+=`<circle cx="${bx}" cy="${by}" r="${r}" fill="${c}" fill-opacity="${s.mode==='glass'||s.mode==='aurora'?.5:.8}"/>`;
+      if(s.mode==='clay')o+=`<ellipse cx="${bx}" cy="${(by-r*.42).toFixed(1)}" rx="${(r*.5).toFixed(1)}" ry="${(r*.24).toFixed(1)}" fill="${s.hi}" fill-opacity=".32"/>`;}
+    // подпись помещается только в крупные пузыри (договор) — мелким её не втискиваем
+    if(r>14){const tc=nodeTx(s,c);
+      o+=txt(s,bx,by+4,ужать(t(s,l),r*1.6,r>24?12:10,8)[0],r>24?12:10,700,tc,null).replace('<text ','<text text-anchor="middle" ');}
   });
   return wrapSvg(s,o);
 }
 
 // 14 ── Dumbbell
-function elDumb(s){
-  const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
-  let o=frame(s)+surface(s,x,y,w,h);
-  o+=txt(s,x+20,y+24,t(s,'До и после внедрения'),12,s.wl,s.ts,s.ls);
-  const D=[{l:'Скорость',a:24,b:81},{l:'Точность',a:52,b:94},{l:'Затраты',a:70,b:38},{l:'NPS',a:41,b:76}];
+const ОБР_dumb={title:'До и после внедрения',rows:[
+  {label:'Скорость',a:24,b:81},{label:'Точность',a:52,b:94},
+  {label:'Затраты',a:70,b:38},{label:'NPS',a:41,b:76}]};
+function elDumb(s,дан){
+  const x=PAD,y=PAD,w=W-PAD*2;
+  const заг=строка(дан&&дан.title,ОБР_dumb.title);
+  const rows=ряды(дан&&дан.rows,ОБР_dumb.rows,5);
   const lx=x+20,tx=x+92,tw=w-140,gl=s.glow?` filter="${s.glow}"`:'';
-  D.forEach((d,i)=>{
-    const ty=y+42+i*23;
-    o+=txt(s,lx,ty+4,t(s,d.l),10,s.wl,s.ts,null);
-    const ax=+(tx+tw*d.a/100).toFixed(1),bx=+(tx+tw*d.b/100).toFixed(1);
+  const top=y+42,шаг=23;
+  /* легенда «○ до ● после» — самый нижний элемент карточки, стоит на 33px ниже
+     последнего ряда (при четырёх рядах — там же, где раньше был фиксированный y+h-18).
+     Спуск шрифта 9 учтён тем же множителем 0.22, что и в checks.js — при рядах
+     по умолчанию (4) это держит холст ровно в 190 без роста */
+  const легY=top+(rows.length-1)*шаг+33;
+  const hh=рост(легY+9*0.22);
+  const h=hh-PAD*2;
+  let o=frameH(s,hh)+surface(s,x,y,w,h);
+  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  const [подписи,мfs]=ужатьНабор(rows.map(р=>t(s,String(р.label==null?'':р.label))),tx-lx-6,10,7);
+  rows.forEach((р,i)=>{
+    const ty=top+i*шаг;
+    o+=txt(s,lx,ty+4,подписи[i],мfs,s.wl,s.ts,null);
+    // договор границ для a/b не задаёт — считаем их долей шкалы 0–100,
+    // как в elBars/elRing, иначе образец (24…94) потерял бы побайтовое совпадение
+    const a=Math.max(0,Math.min(100,Number(р.a)||0)),b=Math.max(0,Math.min(100,Number(р.b)||0));
+    const ax=+(tx+tw*a/100).toFixed(1),bx=+(tx+tw*b/100).toFixed(1);
     o+=`<line x1="${tx}" y1="${ty}" x2="${tx+tw}" y2="${ty}" stroke="${s.ln}" stroke-width="${s.mode==='brutal'?2:1}"/>`;
     o+=`<line x1="${ax}" y1="${ty}" x2="${bx}" y2="${ty}" stroke="${s.ac}" stroke-width="${s.mode==='brutal'?5:s.mode==='clay'?6:3}" stroke-linecap="${s.mode==='retro'||s.mode==='brutal'?'butt':'round'}" opacity="${s.mode==='line'?.4:.55}"/>`;
     const dot=(px,c,r)=>s.mode==='retro'?`<rect x="${px-r}" y="${ty-r}" width="${r*2}" height="${r*2}" fill="${c}"/>`
@@ -477,10 +503,10 @@ function elDumb(s){
       :s.mode==='brutal'?`<circle cx="${px}" cy="${ty}" r="${r}" fill="${c}" stroke="${s.hard}" stroke-width="2"/>`
       :`<circle cx="${px}" cy="${ty}" r="${r}" fill="${c}"${gl}/>`;
     o+=dot(ax,s.tm,4.5)+dot(bx,s.mode==='brutal'?'#000':s.ac,6);
-    o+=txt(s,x+w-20,ty+4,d.b+'%',10,700,s.ac,null).replace('<text ','<text text-anchor="end" ');
+    o+=txt(s,x+w-20,ty+4,b+'%',10,700,s.ac,null).replace('<text ','<text text-anchor="end" ');
   });
-  o+=txt(s,tx,y+h-18,t(s,'○ до    ● после'),9,s.wl,s.tm,null);
-  return wrapSvg(s,o);
+  o+=txt(s,tx,легY,t(s,'○ до    ● после'),9,s.wl,s.tm,null);
+  return wrapSvgH(s,o,hh);
 }
 
 
@@ -744,13 +770,21 @@ function elLoop(s,дан){
 }
 
 // 9 ── Путь клиента
-function elJourney(s){
+const ОБР_journey={title:'Путь клиента',stages:[
+  {label:'Узнал',mood:3},{label:'Изучил',mood:4},{label:'Пробовал',mood:2},
+  {label:'Купил',mood:4},{label:'Советует',mood:5}]};
+function elJourney(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  o+=txt(s,x+20,y+24,t(s,'Путь клиента'),12,s.wl,s.ts,s.ls);
-  const ST2=[['Узнал',3],['Изучил',4],['Пробовал',2],['Купил',4],['Советует',5]];
+  const заг=строка(дан&&дан.title,ОБР_journey.title);
+  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  // mood — число 1–5 (договор), задаёт высоту точки; за границами не уходит с карточки
+  const ST2=ряды(дан&&дан.stages,ОБР_journey.stages,6)
+    .map(ст=>[String(ст.label==null?'':ст.label),Math.max(1,Math.min(5,Number(ст.mood)||0))]);
   const ox=x+28,pw=w-56,base=y+h-34,unit=15;
-  const pts=ST2.map(([l,e],i)=>[+(ox+i*pw/4).toFixed(1),+(base-(e-1)*unit).toFixed(1)]);
+  // точки всегда занимают всю ширину области (0.14–0.86), шаг зависит от числа стадий
+  const шаг=ST2.length>1?pw/(ST2.length-1):0;
+  const pts=ST2.map(([,e],i)=>[+(ox+i*шаг).toFixed(1),+(base-(e-1)*unit).toFixed(1)]);
   const gl=s.glow?` filter="${s.glow}"`:'';
   let d;
   if(s.mode==='retro'){d=`M ${pts[0][0]} ${pts[0][1]}`;
@@ -758,12 +792,13 @@ function elJourney(s){
   else d='M '+pts.map(p=>p.join(' ')).join(' L ');
   o+=`<line x1="${ox}" y1="${base}" x2="${ox+pw}" y2="${base}" stroke="${s.ln}" stroke-width="1"/>`;
   o+=`<path d="${d}" fill="none" stroke="${s.ac}" stroke-width="${s.mode==='brutal'?3.5:s.mode==='clay'?4:2}" stroke-linejoin="round" stroke-linecap="round"${gl}/>`;
+  const [подп,пfs]=ужатьНабор(ST2.map(ст=>t(s,ст[0])),шаг-6,8.5,6.5);
   pts.forEach((p,i)=>{
     const good=ST2[i][1]>=4, c=good?s.pos:ST2[i][1]<=2?s.ac2:s.ac;
     if(s.mode==='retro')     o+=`<rect x="${p[0]-5}" y="${p[1]-5}" width="10" height="10" fill="${c}"/>`;
     else if(s.mode==='line') o+=`<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="${s.bg}" stroke="${c}" stroke-width="1.6"/>`;
     else o+=`<circle cx="${p[0]}" cy="${p[1]}" r="5.5" fill="${c}"${gl}/>`;
-    o+=txt(s,p[0],base+15,t(s,ST2[i][0]),8.5,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
+    o+=txt(s,p[0],base+15,подп[i],пfs,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
   });
   return wrapSvg(s,o);
 }
@@ -1679,8 +1714,8 @@ function elFaq(s,дан){
 
 
 const CATS=[
-  ["Диаграммы и данные",[["kpi","KPI-карточка",elKpi,ОБР_kpi],["bars","Прогресс-бары",elBars,ОБР_bars],["column","Столбчатый график",elColumn,ОБР_column],["donut","Кольцевая диаграмма",elDonut,ОБР_donut],["radar","Радар",elRadar],["gauge","Спидометр",elGauge,ОБР_gauge],["area","Area chart",elArea],["wf","Waterfall",elWaterfall],["heat","Heatmap",elHeat,ОБР_heat],["tree","Treemap",elTree],["scat","Scatter",elScatter,ОБР_scat],["spark","Sparklines",elSpark],["bub","Bubble",elBubble],["dumb","Dumbbell",elDumb]]],
-  ["Шаги и процессы",[["arrows","Стрелки-шаги",elArrows,ОБР_arrows],["funnel","Воронка",elFunnel,ОБР_funnel],["timeline","Таймлайн",elTimeline,ОБР_timeline,ОГ_timeline],["cycle","Цикл PDCA",elCycle,ОБР_cycle],["roadmap","Дорожная карта",elRoadmap,ОБР_roadmap],["swim","Swimlane",elSwim,ОБР_swim],["dtree","Дерево решений",elTree2],["loop","Бесконечный цикл",elLoop,ОБР_loop],["journey","Путь клиента",elJourney],["tcards","Таймлайн карточками",elTCards,ОБР_tcards]]],
+  ["Диаграммы и данные",[["kpi","KPI-карточка",elKpi,ОБР_kpi],["bars","Прогресс-бары",elBars,ОБР_bars],["column","Столбчатый график",elColumn,ОБР_column],["donut","Кольцевая диаграмма",elDonut,ОБР_donut],["radar","Радар",elRadar],["gauge","Спидометр",elGauge,ОБР_gauge],["area","Area chart",elArea],["wf","Waterfall",elWaterfall],["heat","Heatmap",elHeat,ОБР_heat],["tree","Treemap",elTree],["scat","Scatter",elScatter,ОБР_scat],["spark","Sparklines",elSpark],["bub","Bubble",elBubble,ОБР_bub],["dumb","Dumbbell",elDumb,ОБР_dumb]]],
+  ["Шаги и процессы",[["arrows","Стрелки-шаги",elArrows,ОБР_arrows],["funnel","Воронка",elFunnel,ОБР_funnel],["timeline","Таймлайн",elTimeline,ОБР_timeline,ОГ_timeline],["cycle","Цикл PDCA",elCycle,ОБР_cycle],["roadmap","Дорожная карта",elRoadmap,ОБР_roadmap],["swim","Swimlane",elSwim,ОБР_swim],["dtree","Дерево решений",elTree2],["loop","Бесконечный цикл",elLoop,ОБР_loop],["journey","Путь клиента",elJourney,ОБР_journey],["tcards","Таймлайн карточками",elTCards,ОБР_tcards]]],
   ["Матрицы и пирамиды",[["pyramid","Пирамида",elPyramid],["swot","SWOT",elSwot,ОБР_swot],["m22","Матрица 2×2",elM22,ОБР_m22],["venn","Диаграмма Венна",elVenn,ОБР_venn],["fmatrix","Таблица сравнения",elFMatrix,ОБР_fmatrix]]],
   ["AI и нейросети",[["net","Нейронная сеть",elNet,ОБР_net],["trans","Блок трансформера",elTrans],["rag","Конвейер RAG",elRag,ОБР_rag],["llm","Сравнение моделей",elLLM,ОБР_llm],["vec","Векторное пространство",elVec]]],
   ["Архитектура и интеграции",[["micro","Микросервисы",elMicro,ОБР_micro],["cicd","Конвейер CI/CD",elCicd,ОБР_cicd],["egov","Межведомственный шлюз",elEgov,ОБР_egov],["bus","Событийная шина",elBus,ОБР_bus],["layers","Слои системы",elLayers,ОБР_layers]]],
