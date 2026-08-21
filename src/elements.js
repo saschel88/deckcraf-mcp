@@ -578,7 +578,7 @@ function elCycle(s,дан){
   const пал=[s.ac,s.ac3,s.ac2,s.pos];
   /* четвертей ровно четыре: геометрия кольца делится на четыре,
      недостающие берутся из образца, лишние отбрасываются */
-  const обр=['Plan','Do','Check','Act'];
+  const обр=ОБР_cycle.quadrants.map(о=>о.label);
   const чет=ряды(дан&&дан.quadrants,ОБР_cycle.quadrants,4);
   const Q=обр.map((об,i)=>[String(чет[i]&&чет[i].label!=null?чет[i].label:об),пал[i]]);
   const [ярл,яfs]=ужатьНабор(Q.map(п=>t(s,п[0])),46,9.5,7);
@@ -700,7 +700,7 @@ function elLoop(s,дан){
       o+=`<rect x="${(cx+rx*Math.cos(a)-4).toFixed(1)}" y="${(cy+ry*Math.sin(a)-4).toFixed(1)}" width="8" height="8" fill="${s.track}"/>`;}
   }else o+=`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="none" stroke="${s.ln}" stroke-width="${s.mode==='brutal'?3:s.mode==='clay'?6:2}"${s.mode==='line'?' stroke-dasharray="4 4"':''}/>`;
   // узлов ровно четыре: они стоят по четырём точкам эллипса
-  const обрN=['Plan','Build','Run','Learn'];
+  const обрN=ОБР_loop.nodes.map(о=>о.label);
   const уз=ряды(дан&&дан.nodes,ОБР_loop.nodes,4);
   const N=обрN.map((об,i)=>[String(уз[i]&&уз[i].label!=null?уз[i].label:об),i]);
   const [ярлN,яfsN]=ужатьНабор(N.map(п=>t(s,п[0])),30,8.5,6);
@@ -824,7 +824,8 @@ function elSwot(s,дан){
   o+=txt(s,x+20,y+26,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const ox=x+20,oy=y+36,qw=(w-46)/2,qh=(h-62)/2,g=6;
   // четыре квадранта в порядке S, W, O, T — места закреплены за ролями
-  const обрQ=[['S','Сильные',s.ac,0,0],['W','Слабые',s.ac3,1,0],['O','Возможности',s.pos,0,1],['T','Угрозы',s.ac2,1,1]];
+  const цвQ=[s.ac,s.ac3,s.pos,s.ac2],xQ=[0,1,0,1],yQ=[0,0,1,1];
+  const обрQ=ОБР_swot.quadrants.map((о,i)=>[о.letter,о.label,цвQ[i],xQ[i],yQ[i]]);
   const кв=ряды(дан&&дан.quadrants,ОБР_swot.quadrants,4);
   const Q=обрQ.map(([л,п,c,cxi,cyi],i)=>[
     String(кв[i]&&кв[i].letter!=null?кв[i].letter:л),
@@ -862,7 +863,8 @@ function elM22(s,дан){
   o+=`<line x1="${ox}" y1="${oy+ph/2}" x2="${ox+pw}" y2="${oy+ph/2}" stroke="${s.ln}" stroke-width="1"${s.mode==='retro'?'':' stroke-dasharray="3 3"'}/>`;
   o+=`<line x1="${ox+pw/2}" y1="${oy}" x2="${ox+pw/2}" y2="${oy+ph}" stroke="${s.ln}" stroke-width="1"${s.mode==='retro'?'':' stroke-dasharray="3 3"'}/>`;
   // четыре клетки закреплены за местами: порядок в данных задаёт смысл
-  const обрM=[['Сделать',s.pos,0,0],['Спланировать',s.ac,1,0],['Делегировать',s.ac3,0,1],['Убрать',s.tm,1,1]];
+  const цвM=[s.pos,s.ac,s.ac3,s.tm],xM=[0,1,0,1],yM=[0,0,1,1];
+  const обрM=ОБР_m22.quadrants.map((о,i)=>[о.label,цвM[i],xM[i],yM[i]]);
   const квM=ряды(дан&&дан.quadrants,ОБР_m22.quadrants,4);
   const Q=обрM.map(([л,c,cxi,cyi],i)=>[String(квM[i]&&квM[i].label!=null?квM[i].label:л),c,cxi,cyi]);
   const [ярлM,яfsM]=ужатьНабор(Q.map(п=>t(s,п[0])),pw/2-24,9,6.5);
@@ -969,7 +971,7 @@ function elNet(s,дан){
     else o+=`<circle cx="${px}" cy="${py}" r="${r}" fill="${c}" fill-opacity="${s.mode==='glass'||s.mode==='aurora'?.55:1}"${gl}/>`;
   }));
   // слоёв ровно три: столбцы узлов расставлены под них
-  const обрL=['вход','скрытый','выход'];
+  const обрL=ОБР_net.layers.map(о=>о.label);
   const сл=ряды(дан&&дан.layers,ОБР_net.layers,3);
   const [ярлL,яfsL]=ужатьНабор(обрL.map((об,i)=>t(s,String(сл[i]&&сл[i].label!=null?сл[i].label:об))),84,8.5,6.5);
   ярлL.forEach((l,i)=>
@@ -1023,7 +1025,8 @@ function elRag(s,дан){
   const заг=строка(дан&&дан.title,ОБР_rag.title);
   o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const rowY=y+52, bh=24, aw=(w-70-(iso?s.dx:0))/3, bx=x+24;
-  const обрR=[['Запрос',s.ac3],['Поиск',s.ac],['Ответ',s.pos]];
+  const цвR=[s.ac3,s.ac,s.pos];
+  const обрR=ОБР_rag.steps.map((о,i)=>[о.label,цвR[i]]);
   const шг=ряды(дан&&дан.steps,ОБР_rag.steps,3);
   const R=обрR.map(([л,c],i)=>[String(шг[i]&&шг[i].label!=null?шг[i].label:л),c]);
   const [ярлR,яfsR]=ужатьНабор(R.map(п=>п[0]),aw-6,9,6.5);
@@ -1111,7 +1114,8 @@ function elMicro(s,дан){
   const заг=строка(дан&&дан.title,ОБР_micro.title);
   o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const gw=110, gx=x+w/2-gw/2, gy=y+32, bh=21;
-  const обрS=[['Auth',s.ac3],['Users',s.ac2],['Orders',s.pos]];
+  const цвS=[s.ac3,s.ac2,s.pos];
+  const обрS=ОБР_micro.services.map((о,i)=>[о.label,цвS[i]]);
   const срв=ряды(дан&&дан.services,ОБР_micro.services,3);
   const S=обрS.map(([л,c],i)=>[String(срв[i]&&срв[i].label!=null?срв[i].label:л),c]);
   const sw2=(w-52)/S.length-6, sy=gy+38;
@@ -1187,9 +1191,9 @@ function elEgov(s,дан){
   const hy=top+bh+12;
   const [шлюз,шfs]=ужать(строка(дан&&дан.hub,ОБР_egov.hub),w-70,9,7);
   o+=node(s,x+30,hy,w-60,bh,s.ac,шлюз,шfs);
-  const обрM=[['МВД',s.ac2],['МЗ',s.pos],['МФ',s.ac2],['МОН',s.pos]];
+  const обрM=ОБР_egov.agencies.map(о=>о.label);
   const вед=ряды(дан&&дан.agencies,ОБР_egov.agencies,4);
-  const M=вед.map((в,i)=>[String(в.label==null?(обрM[i]?обрM[i][0]:''):в.label),[s.ac2,s.pos][i%2]]);
+  const M=вед.map((в,i)=>[String(в.label==null?(обрM[i]?обрM[i]:''):в.label),[s.ac2,s.pos][i%2]]);
   const mw=(w-52)/M.length-6, my=hy+bh+18;
   const [ярлM2,яfsM2]=ужатьНабор(M.map(п=>п[0]),mw-6,8.5,6.5);
   o+=`<line x1="${x+30+mw/2}" y1="${hy+bh+10}" x2="${x+w-30-mw/2}" y2="${hy+bh+10}" stroke="${s.ln}" stroke-width="1.2"/>`;
@@ -1215,11 +1219,14 @@ function elBus(s,дан){
   const bw=(w-52)/3-8, byTop=y+42, byBot=y+h-58, bh=20;
   const busY=y+h/2+2, busH=s.mode==='clay'?18:14;
   // источников и подписчиков по три: под них расчерчены обе полки
-  const обрPR=[['Заказы',s.ac3],['Платежи',s.ac2],['Склад',s.pos]];
-  const обрCO=[['Аналитика',s.ac2],['Уведомл.',s.ac3],['Архив',s.pos]];
-  const свести=(пришло,обр,обрОБР)=>{const д=ряды(пришло,обрОБР,3);
+  const цвPR=[s.ac3,s.ac2,s.pos], цвCO=[s.ac2,s.ac3,s.pos];
+  const обрPR=ОБР_bus.producers.map((о,i)=>[о.label,цвPR[i]]);
+  const обрCO=ОБР_bus.consumers.map((о,i)=>[о.label,цвCO[i]]);
+  // ряды() ждёт образец в форме {label}: восстанавливаем её из уже собранного обр*,
+  // а не берём отдельным параметром — второй независимый источник не нужен
+  const свести=(пришло,обр)=>{const д=ряды(пришло,обр.map(([л])=>({label:л})),3);
     return обр.map(([л,c],i)=>[String(д[i]&&д[i].label!=null?д[i].label:л),c]);};
-  const PR=свести(дан&&дан.producers,обрPR,ОБР_bus.producers), CO=свести(дан&&дан.consumers,обрCO,ОБР_bus.consumers);
+  const PR=свести(дан&&дан.producers,обрPR), CO=свести(дан&&дан.consumers,обрCO);
   const [ярлPR,яfsPR]=ужатьНабор(PR.map(п=>п[0]),bw-6,8,6);
   const [ярлCO,яfsCO]=ужатьНабор(CO.map(п=>п[0]),bw-6,8,6);
   PR.forEach((_,i)=>{const px=x+26+i*(bw+12);
