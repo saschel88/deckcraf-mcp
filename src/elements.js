@@ -397,32 +397,52 @@ function elHeat(s,дан){
 }
 
 // 10 ── Treemap
-function elTree(s){
+const ОБР_tree={title:'Структура выручки',blocks:[
+  {label:'Интеграция',v:'38%'},{label:'Лицензии',v:'24%'},{label:'Поддержка',v:'17%'},
+  {label:'Обучение',v:'12%'},{label:'Прочее',v:'9%'}]};
+/* Три преднастроенные раскладки — на 4, 5 и 6 блоков. Договор прямо говорит:
+   площади заданы вёрсткой, а не пересчитываются от значений, поэтому пропорции
+   внутри каждой раскладки — константы, не функция v. Раскладка на 5 дословно
+   повторяет то, что раньше было зашито в теле функции (байтовое совпадение
+   образца держится на этом). Во всех трёх крупнейший блок — в левом верхнем углу */
+const РАСКЛ_tree={
+  4:[{x:0,y:0,w:.62,h:.58},{x:.62,y:0,w:.38,h:.58},{x:0,y:.58,w:.5,h:.42},{x:.5,y:.58,w:.5,h:.42}],
+  5:[{x:0,y:0,w:.54,h:.58},{x:.54,y:0,w:.46,h:.58},{x:0,y:.58,w:.36,h:.42},{x:.36,y:.58,w:.32,h:.42},{x:.68,y:.58,w:.32,h:.42}],
+  6:[{x:0,y:0,w:.36,h:.58},{x:.36,y:0,w:.32,h:.58},{x:.68,y:0,w:.32,h:.58},
+     {x:0,y:.58,w:.34,h:.42},{x:.34,y:.58,w:.33,h:.42},{x:.67,y:.58,w:.33,h:.42}]
+};
+function elTree(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  o+=txt(s,x+20,y+24,t(s,'Структура выручки'),12,s.wl,s.ts,s.ls);
+  const заг=строка(дан&&дан.title,ОБР_tree.title);
+  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const ox=x+18,oy=y+38,pw=w-36,ph=h-56,g=3;
-  const B=[
-    {l:'Интеграция',v:'38%',x:0,y:0,w:.54,h:.58,c:s.ac},
-    {l:'Лицензии',v:'24%',x:.54,y:0,w:.46,h:.58,c:s.ac3},
-    {l:'Поддержка',v:'17%',x:0,y:.58,w:.36,h:.42,c:s.ac2},
-    {l:'Обучение',v:'12%',x:.36,y:.58,w:.32,h:.42,c:s.pos},
-    {l:'Прочее',v:'9%',x:.68,y:.58,w:.32,h:.42,c:s.track}];
+  const блокиДан=ряды(дан&&дан.blocks,ОБР_tree.blocks,6);
+  // договор держит 4–6; за пределами — берём ближайшую объявленную раскладку,
+  // а не рушим отрисовку на невалидном количестве
+  const N=Math.max(4,Math.min(6,блокиДан.length));
+  const слоты=РАСКЛ_tree[N];
+  const пал=[s.ac,s.ac3,s.ac2,s.pos,s.track,s.tm];
+  const B=слоты.map((слот,i)=>{
+    const б=блокиДан[i]||{};
+    return {l:String(б.label==null?'':б.label),v:String(б.v==null?'':б.v),...слот,c:пал[i%пал.length]};
+  });
   B.forEach((b,i)=>{
     const bx=ox+b.x*pw,by=oy+b.y*ph,bw=b.w*pw-g,bh=b.h*ph-g;
     const rr=s.mode==='clay'?12:s.mode==='retro'||s.mode==='brutal'?0:4;
     if(s.mode==='line'){
       o+=`<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="${rr}" fill="none" stroke="${b.c}" stroke-width="${i===0?2:1.3}"/>`;
     }else if(s.mode==='brutal'){
-      o+=`<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" fill="${s.hard}" fill-opacity="${(.88-i*.18).toFixed(2)}" stroke="${s.hard}" stroke-width="2"/>`;
+      // .18 за шаг — на шестом блоке (i=5) ушло бы в минус, поэтому снизу зажато
+      o+=`<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" fill="${s.hard}" fill-opacity="${Math.max(.16,.88-i*.18).toFixed(2)}" stroke="${s.hard}" stroke-width="2"/>`;
     }else{
       const op=s.mode==='glass'||s.mode==='aurora'?'.45':s.mode==='neon'?'.18':'1';
       o+=`<rect x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="${rr}" fill="${b.c}" fill-opacity="${op}"${s.mode==='neon'?` stroke="${b.c}" stroke-width="1.3" filter="${s.glow}"`:''}${s.mode==='memphis'?' stroke="${s.hard}" stroke-width="1.5"':''}/>`;
     }
     const tc=nodeTx(s,b.c);
     if(bw>52){
-      o+=txt(s,bx+9,by+17,t(s,b.l),9.5,s.wl,tc,null);
-      o+=txt(s,bx+9,by+33,b.v,i===0?15:11,700,tc,null);}
+      o+=txt(s,bx+9,by+17,ужать(t(s,b.l),bw-14,9.5,7)[0],9.5,s.wl,tc,null);
+      o+=txt(s,bx+9,by+33,ужать(b.v,bw-14,i===0?15:11,8)[0],i===0?15:11,700,tc,null);}
   });
   return wrapSvg(s,o);
 }
@@ -890,15 +910,30 @@ function elTCards(s,дан){
 /* ══════ Матрицы и пирамиды ══════ */
 
 // 1 ── Пирамида
-function elPyramid(s){
-  const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2,iso=s.mode==='iso';
-  let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
-  o+=txt(s,x+20,y+26,t(s,'Уровни зрелости'),12,s.wl,s.ts,s.ls);
-  const cx=x+w/2-(iso?s.dx/2:0), L=[['Стратегия',s.ac],['Процессы',s.ac2],['Данные',s.ac3],['Инфраструктура',s.pos]];
+const ОБР_pyramid={title:'Уровни зрелости',levels:[
+  {label:'Стратегия'},{label:'Процессы'},{label:'Данные'},{label:'Инфраструктура'}]};
+function elPyramid(s,дан){
+  const x=PAD,y=PAD,w=W-PAD*2,iso=s.mode==='iso';
+  const заг=строка(дан&&дан.title,ОБР_pyramid.title);
+  const уровниДан=ряды(дан&&дан.levels,ОБР_pyramid.levels,5);
+  const пал=[s.ac,s.ac2,s.ac3,s.pos,s.tm];
+  const L=уровниДан.map((у,i)=>[String(у.label==null?'':у.label),пал[i%пал.length]]);
+  const N=L.length;
+  const cx=x+w/2-(iso?s.dx/2:0);
   const top=y+44, lh=23, g=3, maxW=196;
+  // делитель ширины яруса выводится из общего их числа: N+0.6 при N=4 даёт
+  // ровно тот же 4.6, что раньше был зашит константой
+  const дел=N+0.6;
+  // холст растёт вниз под число ярусов; при N=4 (образец) низ упирается
+  // в прежние 190 — рост() не поднимает высоту, байтовое совпадение держится
+  const низ=top+(N-1)*(lh+g)+lh;
+  const hh=рост(низ);
+  const h=hh-PAD*2;
+  let o=frameH(s,hh)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
+  o+=txt(s,x+20,y+26,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const gl=s.glow?` filter="${s.glow}"`:'';
   L.forEach(([l,c],i)=>{
-    const tw=maxW*(i+1)/4.6, bw=maxW*(i+2)/4.6, by=top+i*(lh+g);
+    const tw=maxW*(i+1)/дел, bw=maxW*(i+2)/дел, by=top+i*(lh+g);
     if(s.mode==='retro'||s.mode==='brutal'){
       const mw=(tw+bw)/2;
       o+=`<rect x="${(cx-mw/2).toFixed(1)}" y="${by}" width="${mw.toFixed(1)}" height="${lh}" fill="${c}"${s.mode==='brutal'?' stroke="${s.hard}" stroke-width="2.5"':''}/>`;
@@ -917,9 +952,9 @@ function elPyramid(s){
       else if(s.mode==='memphis')o+=`<polygon points="${pts}" fill="${c}" stroke="${s.hard}" stroke-width="1.4"/>`;
       else o+=`<polygon points="${pts}" fill="${c}" fill-opacity="${(s.mode==='glass'||s.mode==='aurora')?.5:1}"/>`;
     }
-    o+=txt(s,cx,by+14,t(s,l),9.5,600,nodeTx(s,c),null).replace('<text ','<text text-anchor="middle" ');
+    o+=txt(s,cx,by+14,ужать(t(s,l),maxW-16,9.5,7)[0],9.5,600,nodeTx(s,c),null).replace('<text ','<text text-anchor="middle" ');
   });
-  return wrapSvg(s,o);
+  return wrapSvgH(s,o,hh);
 }
 
 // 2 ── SWOT
@@ -1188,18 +1223,29 @@ function elLLM(s,дан){
 }
 
 // 5 ── Векторное пространство
-function elVec(s){
+/* Пустые подписи по умолчанию — намеренно: до перевода скопления подписей вовсе
+   не рисовали, а образец обязан отрисовываться побайтово так же, как раньше
+   (и describe() отдаёт этот же образец как «пример_данных» — smoke.js требует,
+   чтобы отрисовка примером совпадала с отрисовкой без данных). Пустая подпись
+   просто не выводится (см. ниже if(l)) — нулевой прирост разметки в обоих
+   случаях. Непустая, реально переданная подпись рисуется по-настоящему */
+const ОБР_vec={title:'Поиск ближайших',clusters:['','',''],note:'подсвечены соседи в радиусе'};
+function elVec(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2,iso=s.mode==='iso';
   let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
-  o+=txt(s,x+20,y+24,t(s,'Поиск ближайших'),12,s.wl,s.ts,s.ls);
+  const заг=строка(дан&&дан.title,ОБР_vec.title);
+  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const gl=s.glow?` filter="${s.glow}"`:'';
   const dx=iso?-s.dx/2:0;
   // три плотных кластера, координаты заданы явно — формула давала россыпь
+  // (договор: «по шесть точек, координаты заданы вёрсткой» — положение не трогаем)
   const CL=[
     {cx:x+72+dx, cy:y+70, c:s.ac3, p:[[-14,-8],[-3,6],[9,-13],[15,5],[-10,15],[3,-1]]},
     {cx:x+w-64+dx, cy:y+64, c:s.ac2, p:[[-13,-6],[2,-15],[13,3],[-6,11],[9,13],[-17,5]]},
     {cx:x+w/2+dx, cy:y+h-64, c:s.pos, p:[[-17,-5],[-3,-13],[11,-7],[17,7],[-9,9],[2,3]]}
   ];
+  const скопДан=Array.isArray(дан&&дан.clusters)?дан.clusters:[];
+  const скоп=CL.map((_,i)=>скопДан[i]==null||скопДан[i]===''?ОБР_vec.clusters[i]:String(скопДан[i]));
   const Q={cx:x+w/2+dx, cy:y+h-66}, R=27;
   // радиус поиска — под точками, чтобы не перекрывал их
   o+=`<circle cx="${Q.cx.toFixed(1)}" cy="${Q.cy.toFixed(1)}" r="${R}" fill="${s.ac}" fill-opacity="${s.mode==='line'?0:.1}" stroke="${bgTx(s,s.ac)}" stroke-width="1.2" opacity=".65"${s.mode==='retro'?'':' stroke-dasharray="4 3"'}/>`;
@@ -1216,7 +1262,23 @@ function elVec(s){
   if(s.mode==='retro')o+=`<rect x="${(Q.cx-5).toFixed(1)}" y="${(Q.cy-5).toFixed(1)}" width="10" height="10" fill="${s.ac}"/>`;
   else o+=`<circle cx="${Q.cx.toFixed(1)}" cy="${Q.cy.toFixed(1)}" r="5.5" fill="${s.ac}" stroke="${s.mode==='line'?s.ac:'none'}" stroke-width="1.4"${gl}/>`;
   o+=txt(s,Q.cx,Q.cy-R-8,t(s,'запрос'),8.5,600,bgTx(s,s.ac),null).replace('<text ','<text text-anchor="middle" ');
-  o+=txt(s,x+20,y+h-18,t(s,'подсвечены соседи в радиусе'),8,s.wl,s.tm,null);
+  // подписи скоплений: верхние два — над своим облаком точек (зазор от самой
+  // верхней точки, а не константа), третье лежит у самого круга поиска —
+  // ему подпись ставим справа от круга, чтобы не закрыть ни точки, ни «запрос»
+  CL.forEach((cl,i)=>{
+    const l=скоп[i];
+    if(!l) return;
+    if(i<2){
+      const minOy=Math.min(...cl.p.map(p=>p[1]));
+      const budget=Math.max(24,2*Math.min(cl.cx-x,x+w-cl.cx)-8);
+      o+=txt(s,cl.cx,cl.cy+minOy-9,ужать(t(s,l),budget,9,7)[0],9,600,s.tm,null).replace('<text ','<text text-anchor="middle" ');
+    }else{
+      const lx=Q.cx+R+10, budget=Math.max(24,(x+w-20)-lx);
+      o+=txt(s,lx,Q.cy+4,ужать(t(s,l),budget,9,7)[0],9,600,s.tm,null).replace('<text ','<text text-anchor="start" ');
+    }
+  });
+  const прим=строка(дан&&дан.note,ОБР_vec.note);
+  o+=txt(s,x+20,y+h-18,t(s,ужать(прим,w-40,8,6.5)[0]),8,s.wl,s.tm,null);
   return wrapSvg(s,o);
 }
 
@@ -1763,10 +1825,10 @@ function elFaq(s,дан){
 
 
 const CATS=[
-  ["Диаграммы и данные",[["kpi","KPI-карточка",elKpi,ОБР_kpi],["bars","Прогресс-бары",elBars,ОБР_bars],["column","Столбчатый график",elColumn,ОБР_column],["donut","Кольцевая диаграмма",elDonut,ОБР_donut],["radar","Радар",elRadar,ОБР_radar],["gauge","Спидометр",elGauge,ОБР_gauge],["area","Area chart",elArea],["wf","Waterfall",elWaterfall,ОБР_wf],["heat","Heatmap",elHeat,ОБР_heat],["tree","Treemap",elTree],["scat","Scatter",elScatter,ОБР_scat],["spark","Sparklines",elSpark],["bub","Bubble",elBubble,ОБР_bub],["dumb","Dumbbell",elDumb,ОБР_dumb]]],
+  ["Диаграммы и данные",[["kpi","KPI-карточка",elKpi,ОБР_kpi],["bars","Прогресс-бары",elBars,ОБР_bars],["column","Столбчатый график",elColumn,ОБР_column],["donut","Кольцевая диаграмма",elDonut,ОБР_donut],["radar","Радар",elRadar,ОБР_radar],["gauge","Спидометр",elGauge,ОБР_gauge],["area","Area chart",elArea],["wf","Waterfall",elWaterfall,ОБР_wf],["heat","Heatmap",elHeat,ОБР_heat],["tree","Treemap",elTree,ОБР_tree],["scat","Scatter",elScatter,ОБР_scat],["spark","Sparklines",elSpark],["bub","Bubble",elBubble,ОБР_bub],["dumb","Dumbbell",elDumb,ОБР_dumb]]],
   ["Шаги и процессы",[["arrows","Стрелки-шаги",elArrows,ОБР_arrows],["funnel","Воронка",elFunnel,ОБР_funnel],["timeline","Таймлайн",elTimeline,ОБР_timeline,ОГ_timeline],["cycle","Цикл PDCA",elCycle,ОБР_cycle],["roadmap","Дорожная карта",elRoadmap,ОБР_roadmap],["swim","Swimlane",elSwim,ОБР_swim],["dtree","Дерево решений",elTree2],["loop","Бесконечный цикл",elLoop,ОБР_loop],["journey","Путь клиента",elJourney,ОБР_journey],["tcards","Таймлайн карточками",elTCards,ОБР_tcards]]],
-  ["Матрицы и пирамиды",[["pyramid","Пирамида",elPyramid],["swot","SWOT",elSwot,ОБР_swot],["m22","Матрица 2×2",elM22,ОБР_m22],["venn","Диаграмма Венна",elVenn,ОБР_venn],["fmatrix","Таблица сравнения",elFMatrix,ОБР_fmatrix]]],
-  ["AI и нейросети",[["net","Нейронная сеть",elNet,ОБР_net],["trans","Блок трансформера",elTrans],["rag","Конвейер RAG",elRag,ОБР_rag],["llm","Сравнение моделей",elLLM,ОБР_llm],["vec","Векторное пространство",elVec]]],
+  ["Матрицы и пирамиды",[["pyramid","Пирамида",elPyramid,ОБР_pyramid],["swot","SWOT",elSwot,ОБР_swot],["m22","Матрица 2×2",elM22,ОБР_m22],["venn","Диаграмма Венна",elVenn,ОБР_venn],["fmatrix","Таблица сравнения",elFMatrix,ОБР_fmatrix]]],
+  ["AI и нейросети",[["net","Нейронная сеть",elNet,ОБР_net],["trans","Блок трансформера",elTrans],["rag","Конвейер RAG",elRag,ОБР_rag],["llm","Сравнение моделей",elLLM,ОБР_llm],["vec","Векторное пространство",elVec,ОБР_vec]]],
   ["Архитектура и интеграции",[["micro","Микросервисы",elMicro,ОБР_micro],["cicd","Конвейер CI/CD",elCicd,ОБР_cicd],["egov","Межведомственный шлюз",elEgov,ОБР_egov],["bus","Событийная шина",elBus,ОБР_bus],["layers","Слои системы",elLayers,ОБР_layers]]],
   ["Числа и инфографика",[["bignum","Большое число",elBigNum,ОБР_bignum],["facts","Три факта",elFacts,ОБР_facts],["statcard","Показатель с трендом",elStatCard,ОБР_statcard],["ring","Кольцо прогресса",elRing,ОБР_ring],["icons","Четыре преимущества",elIcons,ОБР_icons],["quote","Цитата с цифрами",elQuote,ОБР_quote],["before","До и после",elBefore,ОБР_before]]],
   ["Переходные слайды",[["divider","Разделитель раздела",elDivider,ОБР_divider],["chapter","Открытие главы",elChapter,ОБР_chapter],["thanks","Финальный слайд",elThanks,ОБР_thanks],["agenda","Содержание",elAgenda,ОБР_agenda],["speaker","Профиль спикера",elSpeaker,ОБР_speaker],["faq","Вопросы и ответы",elFaq,ОБР_faq]]]
