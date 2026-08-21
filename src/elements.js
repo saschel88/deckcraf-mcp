@@ -251,13 +251,19 @@ function elGauge(s,дан){
 }
 
 // 7 ── Area chart
-function elArea(s){
+const ОБР_area={title:'Динамика за 7 месяцев',points:[42,55,48,68,60,82,76],
+  labels:['Янв','Мар','Май','Июл'],delta:'+34%'};
+function elArea(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
   const ox=x+24,oy=y+40,pw=w-48,ph=h-78;
-  o+=txt(s,x+20,y+24,t(s,'Динамика за 7 месяцев'),12,s.wl,s.ts,s.ls);
-  const vals=[42,55,48,68,60,82,76],n=vals.length;
-  const px=i=>+(ox+i*pw/(n-1)).toFixed(1), py=v=>+(oy+ph-ph*v/100).toFixed(1);
+  const заг=строка(дан&&дан.title,ОБР_area.title);
+  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  // договор не задаёт границы точек — берём как долю шкалы 0–100, как в elDumb/elGauge,
+  // иначе образец (42…82) потерял бы побайтовое совпадение
+  const тчк=ряды(дан&&дан.points,ОБР_area.points,9);
+  const vals=тчк.map(в=>Math.max(0,Math.min(100,Number(в)||0))),n=vals.length;
+  const px=i=>+(ox+i*pw/Math.max(1,n-1)).toFixed(1), py=v=>+(oy+ph-ph*v/100).toFixed(1);
   const gl=s.glow?` filter="${s.glow}"`:'';
   const base=oy+ph;
   o+=`<line x1="${ox}" y1="${base}" x2="${ox+pw}" y2="${base}" stroke="${s.ln}" stroke-width="${s.mode==='brutal'?3:1}"/>`;
@@ -278,9 +284,18 @@ function elArea(s){
   o+=`<path d="${line}" fill="none" stroke="${s.ac}" stroke-width="${lw}" stroke-linejoin="round" stroke-linecap="round"${gl}/>`;
   if(s.mode!=='retro'&&s.mode!=='line')
     o+=`<circle cx="${px(n-1)}" cy="${py(vals[n-1])}" r="${s.mode==='clay'?5:4}" fill="${s.ac}"${gl}/>`;
-  o+=txt(s,ox+pw,py(vals[n-1])-12,'+34%',12,700,s.ac,null).replace('<text ','<text text-anchor="end" ');
-  ['Янв','Мар','Май','Июл'].forEach((m,i)=>
-    o+=txt(s,px(i*2),base+18,t(s,m),9,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" '));
+  const delta=строка(дан&&дан.delta,ОБР_area.delta);
+  o+=txt(s,ox+pw,py(vals[n-1])-12,ужать(delta,pw-8,12,8)[0],12,700,s.ac,null).replace('<text ','<text text-anchor="end" ');
+  // подписи — опорные точки: первая, последняя, промежуточные с равным шагом
+  // (договор: подписываются не все точки, а 3–4 опорные); подписей больше,
+  // чем точек, не бывает по замыслу — лишние отбрасываются на всякий случай
+  const лблВсе=ряды(дан&&дан.labels,ОБР_area.labels,4).map(л=>String(л==null?'':л));
+  const к=Math.min(лблВсе.length,n);
+  const лбл=лблВсе.slice(0,к);
+  const idx=i=>к<=1?0:Math.round(i*(n-1)/(к-1));
+  const [метки,мfs]=ужатьНабор(лбл.map(л=>t(s,л)),pw/Math.max(1,к)-6,9,6.5);
+  лбл.forEach((л,i)=>
+    o+=txt(s,px(idx(i)),base+18,метки[i],мfs,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" '));
   return wrapSvg(s,o);
 }
 
@@ -477,19 +492,37 @@ function elScatter(s,дан){
 }
 
 // 12 ── Sparklines
-function elSpark(s){
-  const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
-  let o=frame(s)+surface(s,x,y,w,h);
-  o+=txt(s,x+20,y+24,t(s,'Метрики за неделю'),12,s.wl,s.ts,s.ls);
-  const D=[{l:'Выручка',d:[30,42,38,55,50,66,72],c:s.ac,v:'+18%'},
-           {l:'Клиенты',d:[20,24,33,29,41,46,58],c:s.ac3,v:'+27%'},
-           {l:'Отказы', d:[62,55,58,44,40,32,26],c:s.pos,v:'−41%'}];
+const ОБР_spark={title:'Метрики за неделю',metrics:[
+  {label:'Выручка',data:[30,42,38,55,50,66,72],delta:'+18%'},
+  {label:'Клиенты',data:[20,24,33,29,41,46,58],delta:'+27%'},
+  {label:'Отказы',data:[62,55,58,44,40,32,26],delta:'−41%'}]};
+function elSpark(s,дан){
+  const x=PAD,y=PAD,w=W-PAD*2;
+  // палитра сохраняет исходное сопоставление первых трёх строк (ac/ac3/pos,
+  // ac2 сознательно пропущен там) — четвёртая метрика получает ac2, свободный цвет
+  const пал=[s.ac,s.ac3,s.pos,s.ac2];
+  const M=ряды(дан&&дан.metrics,ОБР_spark.metrics,4).map((м,i)=>({
+    l:String(м.label==null?'':м.label),
+    d:(Array.isArray(м.data)&&м.data.length?м.data:[0]).map(v=>Number(v)||0),
+    c:пал[i%пал.length],
+    v:String(м.delta==null?'':м.delta)
+  }));
   const lx=x+20,sx=x+96,sw2=w-172,rx=x+w-20;
+  const шаг=36,top=y+48;
+  // число метрик двигает нижнюю кромку списка — холст растёт, когда строк больше трёх
+  const hh=рост(top+(M.length-1)*шаг+20);
+  const h=hh-PAD*2;
+  let o=frameH(s,hh)+surface(s,x,y,w,h);
+  const заг=строка(дан&&дан.title,ОБР_spark.title);
+  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const gl=s.glow?` filter="${s.glow}"`:'';
-  D.forEach((d,i)=>{
-    const ty=y+48+i*36,sh=20,mn=Math.min(...d.d),mx=Math.max(...d.d);
-    o+=txt(s,lx,ty+14,t(s,d.l),10.5,s.wl,s.ts,null);
-    const pts=d.d.map((v,j)=>[+(sx+j*sw2/(d.d.length-1)).toFixed(1),+(ty+sh-(v-mn)/(mx-mn)*sh).toFixed(1)]);
+  const [ярл,яfs]=ужатьНабор(M.map(м=>t(s,м.l)),sx-lx-6,10.5,7);
+  const [делты,дfs]=ужатьНабор(M.map(м=>м.v),rx-(sx+sw2)-6,10.5,7);
+  M.forEach((d,i)=>{
+    const ty=top+i*шаг,sh=20,mn=Math.min(...d.d),mx=Math.max(...d.d),ра=(mx-mn)||1;
+    o+=txt(s,lx,ty+14,ярл[i],яfs,s.wl,s.ts,null);
+    // шаг по горизонтали — из длины ряда данной метрики, у метрик он свой
+    const pts=d.d.map((v,j)=>[+(sx+j*sw2/Math.max(1,d.d.length-1)).toFixed(1),+(ty+sh-(v-mn)/ра*sh).toFixed(1)]);
     let path;
     if(s.mode==='retro'){path=`M ${pts[0][0]} ${pts[0][1]}`;
       for(let j=1;j<pts.length;j++)path+=` L ${pts[j][0]} ${pts[j-1][1]} L ${pts[j][0]} ${pts[j][1]}`;}
@@ -497,10 +530,10 @@ function elSpark(s){
     o+=`<path d="${path}" fill="none" stroke="${d.c}" stroke-width="${s.mode==='brutal'?3:s.mode==='clay'?3.5:1.8}" stroke-linejoin="round" stroke-linecap="round"${gl}/>`;
     const last=pts[pts.length-1];
     if(s.mode!=='line')o+=`<circle cx="${last[0]}" cy="${last[1]}" r="3" fill="${d.c}"${gl}/>`;
-    o+=txt(s,rx,ty+14,d.v,10.5,700,d.c,null).replace('<text ','<text text-anchor="end" ');
-    if(i<2)o+=`<line x1="${lx}" y1="${ty+28}" x2="${rx}" y2="${ty+28}" stroke="${s.ln}" stroke-width="${s.mode==='brutal'?2:.7}"/>`;
+    o+=txt(s,rx,ty+14,делты[i],дfs,700,d.c,null).replace('<text ','<text text-anchor="end" ');
+    if(i<M.length-1)o+=`<line x1="${lx}" y1="${ty+28}" x2="${rx}" y2="${ty+28}" stroke="${s.ln}" stroke-width="${s.mode==='brutal'?2:.7}"/>`;
   });
-  return wrapSvg(s,o);
+  return wrapSvgH(s,o,hh);
 }
 
 // 13 ── Bubble
@@ -781,26 +814,54 @@ function elSwim(s,дан){
 }
 
 // 7 ── Дерево решений
-function elTree2(s){
+const ОБР_dtree={title:'Логика выбора',root:'Нужен AI?',branches:[
+  {label:'нет',node:'Ручной',children:[]},
+  {label:'да',node:'Модель',children:['Своя','API']}]};
+function elTree2(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2,iso=s.mode==='iso';
   let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
-  o+=txt(s,x+20,y+24,t(s,'Логика выбора'),12,s.wl,s.ts,s.ls);
+  const заг=строка(дан&&дан.title,ОБР_dtree.title);
+  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  // договор — ровно 2 ветви (сервер уже проверяет счёт, здесь не дублируем):
+  // берём по индексу — 0 слева, 1 справа; недостающее поле берём из образца
+  // поштучно, как в elCycle, а не подменяем всю ветвь целиком
+  const обрB=ОБР_dtree.branches;
+  const переданы=дан&&Array.isArray(дан.branches)?дан.branches:null;
+  const B=обрB.map((об,i)=>{
+    const б=переданы&&переданы[i];
+    return {
+      label:строка(б&&б.label,об.label),
+      node:строка(б&&б.node,об.node),
+      children:(б&&Array.isArray(б.children))?б.children:об.children
+    };
+  });
   const cx=x+w/2-(iso?s.dx/2:0);
   const nh=22, rw=74, cw=64, gw=56;
   const yR=y+30, yC=y+80, yG=y+122;          // три яруса, нижний кончается на y+148 < y+h
   const cL=cx-54, cR=cx+54;                   // дети
-  const gL=cR-32, gR=cR+32;                   // внуки — строго под правым ребёнком
+  const gL=cR-32, gR=cR+32;                   // внуки — строго под правым ребёнком (договор, композиция)
+  // третий ярус — только у правой ветви и только при «ровно 2» потомках
+  // (договор: 0 или 2); 0, 1 или мусор вместо массива — яруса просто нет
+  const внуки=Array.isArray(B[1].children)&&B[1].children.length>=2
+    ?B[1].children.slice(0,2).map(с=>String(с==null?'':с)):null;
   o+=conn(s,cx,yR+nh,cL,yC);
   o+=conn(s,cx,yR+nh,cR,yC);
-  o+=conn(s,cR,yC+nh,gL,yG);
-  o+=conn(s,cR,yC+nh,gR,yG);
-  o+=node(s,cx-rw/2,yR,rw,nh,s.ac,'Нужен AI?',9);
-  o+=node(s,cL-cw/2,yC,cw,nh,s.tm,'Ручной',9);
-  o+=node(s,cR-cw/2,yC,cw,nh,s.ac3,'Модель',9);
-  o+=node(s,gL-gw/2,yG,gw,nh,s.ac2,'Своя',8.5);
-  o+=node(s,gR-gw/2,yG,gw,nh,s.pos,'API',8.5);
-  o+=txt(s,(cx+cL)/2-4,yC-8,t(s,'нет'),8,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
-  o+=txt(s,(cx+cR)/2+4,yC-8,t(s,'да'),8,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
+  if(внуки){
+    o+=conn(s,cR,yC+nh,gL,yG);
+    o+=conn(s,cR,yC+nh,gR,yG);
+  }
+  o+=node(s,cx-rw/2,yR,rw,nh,s.ac,ужать(строка(дан&&дан.root,ОБР_dtree.root),rw-8,9,7)[0],9);
+  const [метки,мfs]=ужатьНабор([B[0].node,B[1].node],cw-8,9,7);
+  o+=node(s,cL-cw/2,yC,cw,nh,s.tm,метки[0],мfs);
+  o+=node(s,cR-cw/2,yC,cw,nh,s.ac3,метки[1],мfs);
+  if(внуки){
+    const [лаб,лfs]=ужатьНабор(внуки,gw-8,8.5,6.5);
+    o+=node(s,gL-gw/2,yG,gw,nh,s.ac2,лаб[0],лfs);
+    o+=node(s,gR-gw/2,yG,gw,nh,s.pos,лаб[1],лfs);
+  }
+  const [подп,пfs]=ужатьНабор([t(s,B[0].label),t(s,B[1].label)],44,8,6);
+  o+=txt(s,(cx+cL)/2-4,yC-8,подп[0],пfs,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
+  o+=txt(s,(cx+cR)/2+4,yC-8,подп[1],пfs,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
   return wrapSvg(s,o);
 }
 
@@ -1825,8 +1886,8 @@ function elFaq(s,дан){
 
 
 const CATS=[
-  ["Диаграммы и данные",[["kpi","KPI-карточка",elKpi,ОБР_kpi],["bars","Прогресс-бары",elBars,ОБР_bars],["column","Столбчатый график",elColumn,ОБР_column],["donut","Кольцевая диаграмма",elDonut,ОБР_donut],["radar","Радар",elRadar,ОБР_radar],["gauge","Спидометр",elGauge,ОБР_gauge],["area","Area chart",elArea],["wf","Waterfall",elWaterfall,ОБР_wf],["heat","Heatmap",elHeat,ОБР_heat],["tree","Treemap",elTree,ОБР_tree],["scat","Scatter",elScatter,ОБР_scat],["spark","Sparklines",elSpark],["bub","Bubble",elBubble,ОБР_bub],["dumb","Dumbbell",elDumb,ОБР_dumb]]],
-  ["Шаги и процессы",[["arrows","Стрелки-шаги",elArrows,ОБР_arrows],["funnel","Воронка",elFunnel,ОБР_funnel],["timeline","Таймлайн",elTimeline,ОБР_timeline,ОГ_timeline],["cycle","Цикл PDCA",elCycle,ОБР_cycle],["roadmap","Дорожная карта",elRoadmap,ОБР_roadmap],["swim","Swimlane",elSwim,ОБР_swim],["dtree","Дерево решений",elTree2],["loop","Бесконечный цикл",elLoop,ОБР_loop],["journey","Путь клиента",elJourney,ОБР_journey],["tcards","Таймлайн карточками",elTCards,ОБР_tcards]]],
+  ["Диаграммы и данные",[["kpi","KPI-карточка",elKpi,ОБР_kpi],["bars","Прогресс-бары",elBars,ОБР_bars],["column","Столбчатый график",elColumn,ОБР_column],["donut","Кольцевая диаграмма",elDonut,ОБР_donut],["radar","Радар",elRadar,ОБР_radar],["gauge","Спидометр",elGauge,ОБР_gauge],["area","Area chart",elArea,ОБР_area],["wf","Waterfall",elWaterfall,ОБР_wf],["heat","Heatmap",elHeat,ОБР_heat],["tree","Treemap",elTree,ОБР_tree],["scat","Scatter",elScatter,ОБР_scat],["spark","Sparklines",elSpark,ОБР_spark],["bub","Bubble",elBubble,ОБР_bub],["dumb","Dumbbell",elDumb,ОБР_dumb]]],
+  ["Шаги и процессы",[["arrows","Стрелки-шаги",elArrows,ОБР_arrows],["funnel","Воронка",elFunnel,ОБР_funnel],["timeline","Таймлайн",elTimeline,ОБР_timeline,ОГ_timeline],["cycle","Цикл PDCA",elCycle,ОБР_cycle],["roadmap","Дорожная карта",elRoadmap,ОБР_roadmap],["swim","Swimlane",elSwim,ОБР_swim],["dtree","Дерево решений",elTree2,ОБР_dtree],["loop","Бесконечный цикл",elLoop,ОБР_loop],["journey","Путь клиента",elJourney,ОБР_journey],["tcards","Таймлайн карточками",elTCards,ОБР_tcards]]],
   ["Матрицы и пирамиды",[["pyramid","Пирамида",elPyramid,ОБР_pyramid],["swot","SWOT",elSwot,ОБР_swot],["m22","Матрица 2×2",elM22,ОБР_m22],["venn","Диаграмма Венна",elVenn,ОБР_venn],["fmatrix","Таблица сравнения",elFMatrix,ОБР_fmatrix]]],
   ["AI и нейросети",[["net","Нейронная сеть",elNet,ОБР_net],["trans","Блок трансформера",elTrans],["rag","Конвейер RAG",elRag,ОБР_rag],["llm","Сравнение моделей",elLLM,ОБР_llm],["vec","Векторное пространство",elVec,ОБР_vec]]],
   ["Архитектура и интеграции",[["micro","Микросервисы",elMicro,ОБР_micro],["cicd","Конвейер CI/CD",elCicd,ОБР_cicd],["egov","Межведомственный шлюз",elEgov,ОБР_egov],["bus","Событийная шина",elBus,ОБР_bus],["layers","Слои системы",elLayers,ОБР_layers]]],
