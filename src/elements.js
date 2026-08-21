@@ -1764,7 +1764,8 @@ function elDivider(s,дан){
   o+=txt(s,cx,y+80,ужать(num,maxW,44)[0],44,s.wv,ac,-1.5).replace('<text ','<text text-anchor="middle" ');
   o+=txt(s,cx,y+110,t(s,ужать(заг,maxW,18)[0]),18,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-.4).replace('<text ','<text text-anchor="middle" ');
   o+=`<line x1="${cx-40}" y1="${y+124}" x2="${cx+40}" y2="${y+124}" stroke="${ac}" stroke-width="${s.mode==='brutal'?3:2}"/>`;
-  o+=txt(s,cx,y+144,t(s,ужать(sub,maxW,9.5)[0]),9.5,s.wl,s.ts,null).replace('<text ','<text text-anchor="middle" ');
+  // y+144 держал нижний отступ в 15.9px при норме 16 — на 1px выше запас надёжный
+  o+=txt(s,cx,y+143,t(s,ужать(sub,maxW,9.5)[0]),9.5,s.wl,s.ts,null).replace('<text ','<text text-anchor="middle" ');
   return wrapSvg(s,o);
 }
 
