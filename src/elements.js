@@ -259,11 +259,13 @@ function elArea(s,дан){
   const ox=x+24,oy=y+40,pw=w-48,ph=h-78;
   const заг=строка(дан&&дан.title,ОБР_area.title);
   o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
-  // договор не задаёт границы точек — берём как долю шкалы 0–100, как в elDumb/elGauge,
-  // иначе образец (42…82) потерял бы побайтовое совпадение
   const тчк=ряды(дан&&дан.points,ОБР_area.points,9);
-  const vals=тчк.map(в=>Math.max(0,Math.min(100,Number(в)||0))),n=vals.length;
-  const px=i=>+(ox+i*pw/Math.max(1,n-1)).toFixed(1), py=v=>+(oy+ph-ph*v/100).toFixed(1);
+  // масштаб считается от максимума переданных значений, нормировать не нужно (договор);
+  // основание — ноль, растёт только верх; если все значения нулевые или
+  // отрицательные, шкала не делится на ноль, а линия предсказуемо ложится на базу
+  const vals=тчк.map(в=>Math.max(0,Number(в)||0)),n=vals.length;
+  const max=Math.max(1,...vals);
+  const px=i=>+(ox+i*pw/Math.max(1,n-1)).toFixed(1), py=v=>+(oy+ph-ph*v/max).toFixed(1);
   const gl=s.glow?` filter="${s.glow}"`:'';
   const base=oy+ph;
   o+=`<line x1="${ox}" y1="${base}" x2="${ox+pw}" y2="${base}" stroke="${s.ln}" stroke-width="${s.mode==='brutal'?3:1}"/>`;
