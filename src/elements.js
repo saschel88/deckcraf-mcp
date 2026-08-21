@@ -57,9 +57,10 @@ function elKpi(s){
 }
 
 // 2 ── Прогресс-бары
+const ОБР_bars={rows:[{label:'Внедрение',v:78},{label:'Автоматизация',v:55},{label:'Оцифровка',v:91}]};
 function elBars(s,дан){
   const пал=[s.ac,s.ac3,s.ac2,s.pos,s.tm];
-  const rows=ряды(дан&&дан.rows,[{label:'Внедрение',v:78},{label:'Автоматизация',v:55},{label:'Оцифровка',v:91}],5);
+  const rows=ряды(дан&&дан.rows,ОБР_bars.rows,5);
   const заг=дан&&дан.title?String(дан.title):null;
   const x=PAD,y=PAD,w=W-PAD*2,iso=s.mode==='iso';
   const top=(iso?y+40:y+30)+(заг?20:0);
@@ -112,15 +113,15 @@ function elColumn(s){
 }
 
 // 4 ── Кольцевая диаграмма
+const ОБР_donut={segments:[{label:'ИТ-услуги',v:46},{label:'Лицензии',v:27},{label:'Поддержка',v:17},{label:'',v:10}],center:'46%'};
 function elDonut(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
   const cx=x+64,cy=y+h/2,R=48,SW=s.mode==='clay'?20:s.mode==='line'?2:15;
   const пал=[s.ac,s.ac3,s.ac2,s.tm,s.pos];
-  const доли=ряды(дан&&дан.segments,
-    [{label:'ИТ-услуги',v:46},{label:'Лицензии',v:27},{label:'Поддержка',v:17},{label:'',v:10}],5);
+  const доли=ряды(дан&&дан.segments,ОБР_donut.segments,5);
   const segs=доли.map((г,i)=>[Math.max(0,Number(г.v)||0),пал[i%пал.length]]);
-  const центр=строка(дан&&дан.center,'46%');
+  const центр=строка(дан&&дан.center,ОБР_donut.center);
   const C=2*Math.PI*R;let off=0;
   const gl=s.glow?` filter="${s.glow}"`:'';
   if(s.mode!=='line') o+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${s.ln}" stroke-width="${SW}"/>`;
@@ -278,20 +279,21 @@ function elWaterfall(s){
 }
 
 // 9 ── Heatmap
+const ОБР_heat={title:'Активность по дням',matrix:[[2,6,9,4,7],[8,3,5,9,6],[4,9,3,7,8],[6,5,8,2,9]],cols:['Пн','Вт','Ср','Чт','Пт'],rows:['н1','н2','н3','н4']};
 function elHeat(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Активность по дням');
+  const заг=строка(дан&&дан.title,ОБР_heat.title);
   o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
-  const M=(Array.isArray(дан&&дан.matrix)&&дан.matrix.length?дан.matrix:[[2,6,9,4,7],[8,3,5,9,6],[4,9,3,7,8],[6,5,8,2,9]])
+  const M=(Array.isArray(дан&&дан.matrix)&&дан.matrix.length?дан.matrix:ОБР_heat.matrix)
     .slice(0,5).map(р=>(Array.isArray(р)?р:[]).slice(0,6).map(v=>Number(v)||0));
   const нc=Math.max(...M.map(р=>р.length),1),нr=M.length;
   const g=3,ox=x+38,oy=y+34;
   // ячейка ужимается под число столбцов, а не наоборот
   const cw=Math.min(40,((x+w-14)-ox-(нc-1)*g)/нc),ch=Math.min(20,(h-34-22-(нr-1)*g)/нr);
   const макс=Math.max(...M.flat(),1);               // интенсивность считается от максимума
-  const [days]=ужатьНабор(ряды(дан&&дан.cols,['Пн','Вт','Ср','Чт','Пт'],нc).map(String),cw,9,7);
-  const [wks]=ужатьНабор(ряды(дан&&дан.rows,['н1','н2','н3','н4'],нr).map(String),ox-x-24,9,7);
+  const [days]=ужатьНабор(ряды(дан&&дан.cols,ОБР_heat.cols,нc).map(String),cw,9,7);
+  const [wks]=ужатьНабор(ряды(дан&&дан.rows,ОБР_heat.rows,нr).map(String),ox-x-24,9,7);
   M.forEach((row,r)=>row.forEach((v,c)=>{
     const cx=ox+c*(cw+g),cy=oy+r*(ch+g),k=v/макс;
     let cf=null;                                   // фактическая заливка ячейки — от неё считаем подпись
@@ -354,14 +356,16 @@ function elTree(s){
 }
 
 // 11 ── Scatter
+const ОБР_scat={title:'Проекты · цена и срок',
+  points:[[12,72,1],[24,55,0],[35,80,0],[42,38,1],[51,62,0],[58,25,0],[64,70,1],[72,44,0],[79,58,0],[86,30,1],[30,35,0],[68,86,0]],
+  axis:'срок →'};
 function elScatter(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2,iso=s.mode==='iso';
   let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
-  const заг=строка(дан&&дан.title,'Проекты · цена и срок');
+  const заг=строка(дан&&дан.title,ОБР_scat.title);
   o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const ox=x+26,oy=iso?y+46:y+38,pw=w-52-(iso?s.dx:0),ph=h-74;
-  const P=ряды(дан&&дан.points,
-    [[12,72,1],[24,55,0],[35,80,0],[42,38,1],[51,62,0],[58,25,0],[64,70,1],[72,44,0],[79,58,0],[86,30,1],[30,35,0],[68,86,0]],16)
+  const P=ряды(дан&&дан.points,ОБР_scat.points,16)
     .map(п=>Array.isArray(п)?п:[Number(п.x)||0,Number(п.y)||0,п.hi?1:0]);
   o+=`<line x1="${ox}" y1="${oy+ph}" x2="${ox+pw}" y2="${oy+ph}" stroke="${s.ln}" stroke-width="${s.mode==='brutal'?3:1}"/>`;
   o+=`<line x1="${ox}" y1="${oy}" x2="${ox}" y2="${oy+ph}" stroke="${s.ln}" stroke-width="${s.mode==='brutal'?3:1}"/>`;
@@ -376,7 +380,7 @@ function elScatter(s,дан){
     else if(s.mode==='memphis')o+=`<circle cx="${px}" cy="${py}" r="${r}" fill="${c}" stroke="${s.hard}" stroke-width="1.2"/>`;
     else                     o+=`<circle cx="${px}" cy="${py}" r="${r}" fill="${c}" fill-opacity="${s.mode==='neon'?.35:.85}"${s.mode==='neon'?` stroke="${c}" stroke-width="1.2"`:''}${hi?gl:''}/>`;
   });
-  o+=txt(s,ox+pw,oy+ph+15,t(s,ужать(строка(дан&&дан.axis,'срок →'),pw*.6,9,7)[0]),9,s.wl,s.tm,null).replace('<text ','<text text-anchor="end" ');
+  o+=txt(s,ox+pw,oy+ph+15,t(s,ужать(строка(дан&&дан.axis,ОБР_scat.axis),pw*.6,9,7)[0]),9,s.wl,s.tm,null).replace('<text ','<text text-anchor="end" ');
   return wrapSvg(s,o);
 }
 
@@ -460,13 +464,14 @@ function elDumb(s){
 /* ══════ Шаги и процессы ══════ */
 
 // 1 ── Стрелки-шаги
+const ОБР_arrows={title:'Этапы внедрения',steps:[{n:'01',label:'Аудит'},{n:'02',label:'Пилот'},{n:'03',label:'Запуск'}]};
 function elArrows(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2,iso=s.mode==='iso';
   let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
-  const заг=строка(дан&&дан.title,'Этапы внедрения');
+  const заг=строка(дан&&дан.title,ОБР_arrows.title);
   o+=txt(s,x+20,y+26,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const пал=[s.ac,s.ac3,s.ac2,s.pos,s.tm];
-  const шаги=ряды(дан&&дан.steps,[{n:'01',label:'Аудит'},{n:'02',label:'Пилот'},{n:'03',label:'Запуск'}],5);
+  const шаги=ряды(дан&&дан.steps,ОБР_arrows.steps,5);
   const L=шаги.map((ш,i)=>[String(ш.n==null?String(i+1).padStart(2,'0'):ш.n),String(ш.label==null?'':ш.label),пал[i%пал.length]]);
   const aw=(w-46-(iso?s.dx:0))/L.length, ah=44, ay=y+h/2-6;
   // подпись обязана уместиться в шеврон: чем больше шагов, тем мельче кегль
@@ -482,19 +487,19 @@ function elArrows(s,дан){
 }
 
 // 2 ── Воронка
+const ОБР_funnel={title:'Путь сделки',levels:[{label:'Лиды',value:'4 200',k:1},{label:'Квалиф.',value:'1 840',k:.76},
+     {label:'Оффер',value:'720',k:.52},{label:'Сделка',value:'310',k:.3}]};
 function elFunnel(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,iso=s.mode==='iso';
   const пал=[s.ac,s.ac3,s.ac2,s.pos,s.tm];
-  const ур=ряды(дан&&дан.levels,
-    [{label:'Лиды',value:'4 200',k:1},{label:'Квалиф.',value:'1 840',k:.76},
-     {label:'Оффер',value:'720',k:.52},{label:'Сделка',value:'310',k:.3}],5);
+  const ур=ряды(дан&&дан.levels,ОБР_funnel.levels,5);
   const L=ур.map((у,i)=>[String(у.label==null?'':у.label),String(у.value==null?'':у.value),
     Math.max(.08,Math.min(1,Number(у.k)||0)),пал[i%пал.length]]);
   const top=y+38, lh=22, g=5;
   const hh=рост(top+(L.length-1)*(lh+g)+lh);        // ступеней больше четырёх — холст растёт
   const h=hh-PAD*2;
   let o=frameH(s,hh)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
-  const заг=строка(дан&&дан.title,'Путь сделки');
+  const заг=строка(дан&&дан.title,ОБР_funnel.title);
   o+=txt(s,x+20,y+26,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   // метки слева отдельной колонкой — так они не сходятся со значением на сужении
   const labR=x+70-(iso?s.dx:0), fw=w-92-(iso?s.dx:0), cx=x+78+fw/2-(iso?s.dx:0);
@@ -522,13 +527,14 @@ function elFunnel(s,дан){
 }
 
 // 3 ── Таймлайн
+const ОБР_timeline={title:'План на год',points:[{period:'Q1',label:'Аудит',done:1},{period:'Q2',label:'Пилот',done:1},
+      {period:'Q3',label:'Тираж',done:1},{period:'Q4',label:'Итоги',done:0}]};
 function elTimeline(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2,iso=s.mode==='iso';
   let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
-  const заг=строка(дан&&дан.title,'План на год');
+  const заг=строка(дан&&дан.title,ОБР_timeline.title);
   o+=txt(s,x+20,y+26,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
-  const P=ряды(дан&&дан.points,[{period:'Q1',label:'Аудит',done:1},{period:'Q2',label:'Пилот',done:1},
-      {period:'Q3',label:'Тираж',done:1},{period:'Q4',label:'Итоги',done:0}],5)
+  const P=ряды(дан&&дан.points,ОБР_timeline.points,5)
     .map(п=>[String(п.period==null?'':п.period),String(п.label==null?'':п.label),п.done?1:0]);
   const lx=x+30, lw=w-60-(iso?s.dx:0), ly=y+h/2+6, шаг=P.length>1?lw/(P.length-1):0;
   const gl=s.glow?` filter="${s.glow}"`:'';
@@ -553,17 +559,18 @@ function elTimeline(s,дан){
 }
 
 // 4 ── Цикл PDCA
+const ОБР_cycle={title:'Цикл улучшений',quadrants:['Plan','Do','Check','Act'].map(л=>({label:л})),center:'PDCA'};
 function elCycle(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Цикл улучшений');
+  const заг=строка(дан&&дан.title,ОБР_cycle.title);
   o+=txt(s,x+20,y+26,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const cx=x+w/2,cy=y+h/2+6,R=44,SW=s.mode==='clay'?22:s.mode==='line'?2.5:17;
   const пал=[s.ac,s.ac3,s.ac2,s.pos];
   /* четвертей ровно четыре: геометрия кольца делится на четыре,
      недостающие берутся из образца, лишние отбрасываются */
   const обр=['Plan','Do','Check','Act'];
-  const чет=ряды(дан&&дан.quadrants,обр.map(л=>({label:л})),4);
+  const чет=ряды(дан&&дан.quadrants,ОБР_cycle.quadrants,4);
   const Q=обр.map((об,i)=>[String(чет[i]&&чет[i].label!=null?чет[i].label:об),пал[i]]);
   const [ярл,яfs]=ужатьНабор(Q.map(п=>t(s,п[0])),46,9.5,7);
   const C=2*Math.PI*R, seg=C/4-4, gl=s.glow?` filter="${s.glow}"`:'';
@@ -582,23 +589,24 @@ function elCycle(s,дан){
     const tc=nodeTx(s,c);
     o+=txt(s,lxp,lyp+3,ярл[i],яfs,700,tc,null).replace('<text ','<text text-anchor="middle" ');
   });
-  const [ц,цfs]=ужать(t(s,строка(дан&&дан.center,'PDCA')),R*1.3,13,9);
+  const [ц,цfs]=ужать(t(s,строка(дан&&дан.center,ОБР_cycle.center)),R*1.3,13,9);
   o+=txt(s,cx,cy+5,ц,цfs,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,null).replace('<text ','<text text-anchor="middle" ');
   return wrapSvg(s,o);
 }
 
 // 5 ── Дорожная карта
+const ОБР_roadmap={title:'Дорожная карта',rows:[{label:'Исследование',start:0,len:.34},{label:'Прототип',start:.22,len:.36},
+      {label:'Разработка',start:.4,len:.44},{label:'Внедрение',start:.72,len:.28}],cols:['Q1','Q2','Q3','Q4']};
 function elRoadmap(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Дорожная карта');
+  const заг=строка(дан&&дан.title,ОБР_roadmap.title);
   o+=txt(s,x+20,y+26,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const пал=[s.ac,s.ac3,s.ac2,s.pos,s.tm];
-  const R=ряды(дан&&дан.rows,[{label:'Исследование',start:0,len:.34},{label:'Прототип',start:.22,len:.36},
-      {label:'Разработка',start:.4,len:.44},{label:'Внедрение',start:.72,len:.28}],5)
+  const R=ряды(дан&&дан.rows,ОБР_roadmap.rows,5)
     .map((р,i)=>[String(р.label==null?'':р.label),Math.max(0,Math.min(1,Number(р.start)||0)),
       Math.max(.04,Math.min(1,Number(р.len)||0)),пал[i%пал.length]]);
-  const cols=ряды(дан&&дан.cols,['Q1','Q2','Q3','Q4'],6).map(String);
+  const cols=ряды(дан&&дан.cols,ОБР_roadmap.cols,6).map(String);
   const ox=x+22,pw=w-44,top=y+48,bh=18,g=7;
   cols.forEach((q,i)=>{
     const qx=ox+pw*i/cols.length;
@@ -617,15 +625,16 @@ function elRoadmap(s,дан){
 }
 
 // 6 ── Swimlane
+const ОБР_swim={title:'Процесс по ролям',lanes:[{role:'Клиент',steps:[{col:0,label:'Заявка'}]},
+      {role:'Менеджер',steps:[{col:1,label:'Оценка'},{col:3,label:'Договор'}]},
+      {role:'Разработка',steps:[{col:2,label:'Анализ'},{col:4,label:'Сдача'}]}]};
 function elSwim(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Процесс по ролям');
+  const заг=строка(дан&&дан.title,ОБР_swim.title);
   o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const пал=[s.ac,s.ac3,s.ac2,s.pos];
-  const L=ряды(дан&&дан.lanes,[{role:'Клиент',steps:[{col:0,label:'Заявка'}]},
-      {role:'Менеджер',steps:[{col:1,label:'Оценка'},{col:3,label:'Договор'}]},
-      {role:'Разработка',steps:[{col:2,label:'Анализ'},{col:4,label:'Сдача'}]}],4)
+  const L=ряды(дан&&дан.lanes,ОБР_swim.lanes,4)
     .map((п,i)=>[String(п.role==null?'':п.role),
       (Array.isArray(п.steps)?п.steps:[]).map(ш=>[Math.max(0,Math.min(4,Number(ш.col)||0)),String(ш.label==null?'':ш.label)]),
       пал[i%пал.length]]);
@@ -669,10 +678,11 @@ function elTree2(s){
 }
 
 // 8 ── Бесконечный цикл
+const ОБР_loop={title:'Непрерывный цикл',nodes:['Plan','Build','Run','Learn'].map(л=>({label:л}))};
 function elLoop(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Непрерывный цикл');
+  const заг=строка(дан&&дан.title,ОБР_loop.title);
   o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const cx=x+w/2,cy=y+h/2+6,rx=86,ry=38;
   const gl=s.glow?` filter="${s.glow}"`:'';
@@ -682,7 +692,7 @@ function elLoop(s,дан){
   }else o+=`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="none" stroke="${s.ln}" stroke-width="${s.mode==='brutal'?3:s.mode==='clay'?6:2}"${s.mode==='line'?' stroke-dasharray="4 4"':''}/>`;
   // узлов ровно четыре: они стоят по четырём точкам эллипса
   const обрN=['Plan','Build','Run','Learn'];
-  const уз=ряды(дан&&дан.nodes,обрN.map(л=>({label:л})),4);
+  const уз=ряды(дан&&дан.nodes,ОБР_loop.nodes,4);
   const N=обрN.map((об,i)=>[String(уз[i]&&уз[i].label!=null?уз[i].label:об),i]);
   const [ярлN,яfsN]=ужатьНабор(N.map(п=>t(s,п[0])),30,8.5,6);
   N.forEach(([l,i])=>{
@@ -727,17 +737,18 @@ function elJourney(s){
 }
 
 // 10 ── Таймлайн карточками
+const ОБР_tcards={title:'Хронология проекта',cards:[{date:'Янв',text:'Старт'},{date:'Апр',text:'Пилот в 3 филиалах'},
+      {date:'Сен',text:'Тираж на 40 точек'}]};
 function elTCards(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2;
   const пал=[s.ac,s.ac3,s.pos,s.ac2];
-  const C=ряды(дан&&дан.cards,[{date:'Янв',text:'Старт'},{date:'Апр',text:'Пилот в 3 филиалах'},
-      {date:'Сен',text:'Тираж на 40 точек'}],4)
+  const C=ряды(дан&&дан.cards,ОБР_tcards.cards,4)
     .map((к,i)=>[String(к.date==null?'':к.date),String(к.text==null?'':к.text),пал[i%пал.length]]);
   const lx=x+30,top=y+34,ch2=36,g=4,cw=w-72;
   const hh=рост(top+(C.length-1)*(ch2+g)+ch2-6);   // карточек больше трёх — холст растёт
   const h=hh-PAD*2;
   let o=frameH(s,hh)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Хронология проекта');
+  const заг=строка(дан&&дан.title,ОБР_tcards.title);
   o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const gl=s.glow?` filter="${s.glow}"`:'';
   const [тексты,тfs]=ужатьНабор(C.map(п=>t(s,п[1])),cw-22,9,7);
@@ -796,15 +807,16 @@ function elPyramid(s){
 }
 
 // 2 ── SWOT
+const ОБР_swot={title:'SWOT-анализ',quadrants:[['S','Сильные'],['W','Слабые'],['O','Возможности'],['T','Угрозы']].map(([л,п])=>({letter:л,label:п}))};
 function elSwot(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'SWOT-анализ');
+  const заг=строка(дан&&дан.title,ОБР_swot.title);
   o+=txt(s,x+20,y+26,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const ox=x+20,oy=y+36,qw=(w-46)/2,qh=(h-62)/2,g=6;
   // четыре квадранта в порядке S, W, O, T — места закреплены за ролями
   const обрQ=[['S','Сильные',s.ac,0,0],['W','Слабые',s.ac3,1,0],['O','Возможности',s.pos,0,1],['T','Угрозы',s.ac2,1,1]];
-  const кв=ряды(дан&&дан.quadrants,обрQ.map(([л,п])=>({letter:л,label:п})),4);
+  const кв=ряды(дан&&дан.quadrants,ОБР_swot.quadrants,4);
   const Q=обрQ.map(([л,п,c,cxi,cyi],i)=>[
     String(кв[i]&&кв[i].letter!=null?кв[i].letter:л),
     String(кв[i]&&кв[i].label!=null?кв[i].label:п),c,cxi,cyi]);
@@ -827,10 +839,12 @@ function elSwot(s,дан){
 }
 
 // 3 ── Матрица 2×2
+const ОБР_m22={title:'Приоритеты',axisX:'срочно →',axisY:'важно',
+  quadrants:['Сделать','Спланировать','Делегировать','Убрать'].map(л=>({label:л}))};
 function elM22(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Приоритеты');
+  const заг=строка(дан&&дан.title,ОБР_m22.title);
   o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const ox=x+46,oy=y+34,pw=w-70,ph=h-72;
   const gl=s.glow?` filter="${s.glow}"`:'';
@@ -840,7 +854,7 @@ function elM22(s,дан){
   o+=`<line x1="${ox+pw/2}" y1="${oy}" x2="${ox+pw/2}" y2="${oy+ph}" stroke="${s.ln}" stroke-width="1"${s.mode==='retro'?'':' stroke-dasharray="3 3"'}/>`;
   // четыре клетки закреплены за местами: порядок в данных задаёт смысл
   const обрM=[['Сделать',s.pos,0,0],['Спланировать',s.ac,1,0],['Делегировать',s.ac3,0,1],['Убрать',s.tm,1,1]];
-  const квM=ряды(дан&&дан.quadrants,обрM.map(([л])=>({label:л})),4);
+  const квM=ряды(дан&&дан.quadrants,ОБР_m22.quadrants,4);
   const Q=обрM.map(([л,c,cxi,cyi],i)=>[String(квM[i]&&квM[i].label!=null?квM[i].label:л),c,cxi,cyi]);
   const [ярлM,яfsM]=ужатьНабор(Q.map(п=>t(s,п[0])),pw/2-24,9,6.5);
   Q.forEach(([l,c,cxi,cyi],qi)=>{
@@ -851,8 +865,8 @@ function elM22(s,дан){
     const on=s.mode==='line'||s.mode==='retro';
     o+=txt(s,qcx,qcy+2,ярлM[qi],яfsM,600,on?c:nodeTx(s,c),null).replace('<text ','<text text-anchor="middle" ');
   });
-  o+=txt(s,x+22,oy+ph/2,t(s,ужать(строка(дан&&дан.axisY,'важно'),44,8.5,6.5)[0]),8.5,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
-  o+=txt(s,ox+pw/2,oy+ph+16,t(s,ужать(строка(дан&&дан.axisX,'срочно →'),pw,8.5,6.5)[0]),8.5,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
+  o+=txt(s,x+22,oy+ph/2,t(s,ужать(строка(дан&&дан.axisY,ОБР_m22.axisY),44,8.5,6.5)[0]),8.5,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
+  o+=txt(s,ox+pw/2,oy+ph+16,t(s,ужать(строка(дан&&дан.axisX,ОБР_m22.axisX),pw,8.5,6.5)[0]),8.5,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
   return wrapSvg(s,o);
 }
 
@@ -885,15 +899,17 @@ function elVenn(s){
 }
 
 // 5 ── Таблица сравнения
+const ОБР_fmatrix={title:'Сравнение решений',features:[{label:'Интеграция',has:[1,1,0]},{label:'AI-модуль',has:[1,0,0]},
+      {label:'Поддержка 24/7',has:[1,1,1]},{label:'Казахский язык',has:[1,0,1]},{label:'White-label',has:[1,0,0]}],
+  products:['Наше','Конк. A','Конк. B']};
 function elFMatrix(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Сравнение решений');
+  const заг=строка(дан&&дан.title,ОБР_fmatrix.title);
   o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
-  const F=ряды(дан&&дан.features,[{label:'Интеграция',has:[1,1,0]},{label:'AI-модуль',has:[1,0,0]},
-      {label:'Поддержка 24/7',has:[1,1,1]},{label:'Казахский язык',has:[1,0,1]},{label:'White-label',has:[1,0,0]}],6)
+  const F=ряды(дан&&дан.features,ОБР_fmatrix.features,6)
     .map(ф=>[String(ф.label==null?'':ф.label),...[0,1,2].map(i=>(Array.isArray(ф.has)?ф.has[i]:0)?1:0)]);
-  const P=ряды(дан&&дан.products,['Наше','Конк. A','Конк. B'],3).map(String);
+  const P=ряды(дан&&дан.products,ОБР_fmatrix.products,3).map(String);
   const lx=x+20, colW=46, cx0=x+w-20-colW*2.5, rh=19, top=y+38;
   const [шапка]=ужатьНабор(P.map(п=>t(s,п)),colW,8.5,6.5);
   const [строки,сfs]=ужатьНабор(F.map(ф=>t(s,ф[0])),cx0-lx-colW/2-8,9,6.5);
@@ -921,10 +937,11 @@ function elFMatrix(s,дан){
 /* ══════ AI и нейросети ══════ */
 
 // 1 ── Нейронная сеть
+const ОБР_net={title:'Архитектура сети',layers:['вход','скрытый','выход'].map(л=>({label:л}))};
 function elNet(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2,iso=s.mode==='iso';
   let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
-  const заг=строка(дан&&дан.title,'Архитектура сети');
+  const заг=строка(дан&&дан.title,ОБР_net.title);
   o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const cxs=[x+46,x+w/2-(iso?s.dx/2:0),x+w-46-(iso?s.dx:0)];
   const cols=[[48,73,98,123],[60,86,112],[73,101]];
@@ -944,7 +961,7 @@ function elNet(s,дан){
   }));
   // слоёв ровно три: столбцы узлов расставлены под них
   const обрL=['вход','скрытый','выход'];
-  const сл=ряды(дан&&дан.layers,обрL.map(л=>({label:л})),3);
+  const сл=ряды(дан&&дан.layers,ОБР_net.layers,3);
   const [ярлL,яfsL]=ужатьНабор(обрL.map((об,i)=>t(s,String(сл[i]&&сл[i].label!=null?сл[i].label:об))),84,8.5,6.5);
   ярлL.forEach((l,i)=>
     o+=txt(s,cxs[i],y+h-18,l,яfsL,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" '));
@@ -989,14 +1006,16 @@ function elTrans(s){
 }
 
 // 3 ── Конвейер RAG
+const ОБР_rag={title:'Конвейер RAG',steps:['Запрос','Поиск','Ответ'].map(л=>({label:л})),
+  store:'Векторная база',note:'контекст подмешивается перед генерацией'};
 function elRag(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2,iso=s.mode==='iso';
   let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
-  const заг=строка(дан&&дан.title,'Конвейер RAG');
+  const заг=строка(дан&&дан.title,ОБР_rag.title);
   o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const rowY=y+52, bh=24, aw=(w-70-(iso?s.dx:0))/3, bx=x+24;
   const обрR=[['Запрос',s.ac3],['Поиск',s.ac],['Ответ',s.pos]];
-  const шг=ряды(дан&&дан.steps,обрR.map(([л])=>({label:л})),3);
+  const шг=ряды(дан&&дан.steps,ОБР_rag.steps,3);
   const R=обрR.map(([л,c],i)=>[String(шг[i]&&шг[i].label!=null?шг[i].label:л),c]);
   const [ярлR,яfsR]=ужатьНабор(R.map(п=>п[0]),aw-6,9,6.5);
   R.forEach(([l,c],i)=>{
@@ -1006,22 +1025,23 @@ function elRag(s,дан){
   });
   // база векторов снизу, питает шаг поиска
   const vw=aw+20, vx=bx+aw+11-10, vy=rowY+bh+22;
-  const [храп,хfs]=ужать(строка(дан&&дан.store,'Векторная база'),vw-8,8.5,6.5);
+  const [храп,хfs]=ужать(строка(дан&&дан.store,ОБР_rag.store),vw-8,8.5,6.5);
   o+=node(s,vx,vy,vw,bh,s.ac2,храп,хfs);
   o+=`<line x1="${vx+vw/2}" y1="${vy}" x2="${bx+aw+11+aw/2}" y2="${rowY+bh}" stroke="${s.ln}" stroke-width="1.2"${s.mode==='retro'?'':' stroke-dasharray="3 3"'}/>`;
-  o+=txt(s,x+20,y+h-18,t(s,ужать(строка(дан&&дан.note,'контекст подмешивается перед генерацией'),w-40,8,6.5)[0]),8,s.wl,s.tm,null);
+  o+=txt(s,x+20,y+h-18,t(s,ужать(строка(дан&&дан.note,ОБР_rag.note),w-40,8,6.5)[0]),8,s.wl,s.tm,null);
   return wrapSvg(s,o);
 }
 
 // 4 ── Сравнение моделей
+const ОБР_llm={title:'Сравнение моделей',models:[{name:'Claude',params:'200B',score:96},{name:'GPT-4o',params:'~200B',score:93},
+      {name:'Gemini',params:'~540B',score:89},{name:'Llama 3',params:'70B',score:82}]};
 function elLLM(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Сравнение моделей');
+  const заг=строка(дан&&дан.title,ОБР_llm.title);
   o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const пал=[s.ac,s.ac3,s.ac2,s.pos,s.tm];
-  const M=ряды(дан&&дан.models,[{name:'Claude',params:'200B',score:96},{name:'GPT-4o',params:'~200B',score:93},
-      {name:'Gemini',params:'~540B',score:89},{name:'Llama 3',params:'70B',score:82}],5)
+  const M=ряды(дан&&дан.models,ОБР_llm.models,5)
     .map((м,i)=>[String(м.name==null?'':м.name),String(м.params==null?'':м.params),
       Math.max(0,Math.min(100,Number(м.score)||0)),пал[i%пал.length]]);
   const lx=x+20, px=x+96, pw=w-160, rh=26, top=y+42;
@@ -1075,21 +1095,22 @@ function elVec(s){
 /* ══════ Архитектура и интеграции ══════ */
 
 // 1 ── Микросервисы
+const ОБР_micro={title:'Микросервисы',gateway:'API Gateway',services:['Auth','Users','Orders'].map(л=>({label:л}))};
 function elMicro(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Микросервисы');
+  const заг=строка(дан&&дан.title,ОБР_micro.title);
   o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const gw=110, gx=x+w/2-gw/2, gy=y+32, bh=21;
   const обрS=[['Auth',s.ac3],['Users',s.ac2],['Orders',s.pos]];
-  const срв=ряды(дан&&дан.services,обрS.map(([л])=>({label:л})),3);
+  const срв=ряды(дан&&дан.services,ОБР_micro.services,3);
   const S=обрS.map(([л,c],i)=>[String(срв[i]&&срв[i].label!=null?срв[i].label:л),c]);
   const sw2=(w-52)/S.length-6, sy=gy+38;
   const [ярлS,яfsS]=ужатьНабор(S.map(п=>п[0]),sw2-6,8.5,6.5);
   const dy=sy+36;
   S.forEach((_,i)=>{const sx=x+26+i*(sw2+9);
     o+=conn(s,gx+gw/2,gy+bh,sx+sw2/2,sy);});
-  const [шлз,шfs]=ужать(строка(дан&&дан.gateway,'API Gateway'),gw-10,9,7);
+  const [шлз,шfs]=ужать(строка(дан&&дан.gateway,ОБР_micro.gateway),gw-10,9,7);
   o+=node(s,gx,gy,gw,bh,s.ac,шлз,шfs);
   S.forEach(([l,c],i)=>{
     const sx=x+26+i*(sw2+9);
@@ -1111,14 +1132,15 @@ function elMicro(s,дан){
 }
 
 // 2 ── Конвейер CI/CD
+const ОБР_cicd={title:'Конвейер поставки',stages:[{label:'Код',done:1},{label:'Сборка',done:1},{label:'Тесты',done:1},
+      {label:'Деплой',done:0},{label:'Монитор',done:0}],progress:0.6,note:'3 из 5 этапов пройдено'};
 function elCicd(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Конвейер поставки');
+  const заг=строка(дан&&дан.title,ОБР_cicd.title);
   o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const пал=[s.ac3,s.ac,s.ac2,s.pos,s.tm];
-  const P=ряды(дан&&дан.stages,[{label:'Код',done:1},{label:'Сборка',done:1},{label:'Тесты',done:1},
-      {label:'Деплой',done:0},{label:'Монитор',done:0}],5)
+  const P=ряды(дан&&дан.stages,ОБР_cicd.stages,5)
     .map((э,i)=>[String(э.label==null?'':э.label),пал[i%пал.length],э.done?1:0]);
   const bw=(w-52)/P.length-5, top=y+52, bh=40;
   const [ярлP,яfsP]=ужатьНабор(P.map(п=>t(s,п[0])),bw-4,7.5,6);
@@ -1132,29 +1154,32 @@ function elCicd(s,дан){
   });
   // полоса прохождения под конвейером
   const py=top+bh+16, pw=w-52;
-  const прог=Math.max(0,Math.min(1,дан&&дан.progress!=null?Number(дан.progress):0.6));
+  const прог=Math.max(0,Math.min(1,дан&&дан.progress!=null?Number(дан.progress):ОБР_cicd.progress));
   o+=track(s,x+26,py,pw,7);
   o+=shape(s,x+26,py,pw*прог,7,s.pos,1);
-  const прим=строка(дан&&дан.note,'3 из 5 этапов пройдено');
+  const прим=строка(дан&&дан.note,ОБР_cicd.note);
   o+=txt(s,x+26,py+24,t(s,ужать(прим,pw,8.5,7)[0]),8.5,s.wl,s.tm,null);
   return wrapSvg(s,o);
 }
 
 // 3 ── Межведомственная интеграция
+const ОБР_egov={title:'Межведомственный шлюз',actor:'Гражданин',hub:'Шлюз ШЭП',
+  agencies:['МВД','МЗ','МФ','МОН'].map(л=>({label:л})),
+  note:'запрос идёт через шлюз, ведомства не связаны напрямую'};
 function elEgov(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Межведомственный шлюз');
+  const заг=строка(дан&&дан.title,ОБР_egov.title);
   o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const cw=88, cx=x+w/2, top=y+34, bh=19;
-  const [акт,аfs]=ужать(строка(дан&&дан.actor,'Гражданин'),cw-8,8.5,6.5);
+  const [акт,аfs]=ужать(строка(дан&&дан.actor,ОБР_egov.actor),cw-8,8.5,6.5);
   o+=node(s,cx-cw/2,top,cw,bh,s.ac3,акт,аfs);
   o+=`<line x1="${cx}" y1="${top+bh}" x2="${cx}" y2="${top+bh+12}" stroke="${s.ln}" stroke-width="1.4"/>`;
   const hy=top+bh+12;
-  const [шлюз,шfs]=ужать(строка(дан&&дан.hub,'Шлюз ШЭП'),w-70,9,7);
+  const [шлюз,шfs]=ужать(строка(дан&&дан.hub,ОБР_egov.hub),w-70,9,7);
   o+=node(s,x+30,hy,w-60,bh,s.ac,шлюз,шfs);
   const обрM=[['МВД',s.ac2],['МЗ',s.pos],['МФ',s.ac2],['МОН',s.pos]];
-  const вед=ряды(дан&&дан.agencies,обрM.map(([л])=>({label:л})),4);
+  const вед=ряды(дан&&дан.agencies,ОБР_egov.agencies,4);
   const M=вед.map((в,i)=>[String(в.label==null?(обрM[i]?обрM[i][0]:''):в.label),[s.ac2,s.pos][i%2]]);
   const mw=(w-52)/M.length-6, my=hy+bh+18;
   const [ярлM2,яfsM2]=ужатьНабор(M.map(п=>п[0]),mw-6,8.5,6.5);
@@ -1164,32 +1189,35 @@ function elEgov(s,дан){
     o+=`<line x1="${mx+mw/2}" y1="${hy+bh}" x2="${mx+mw/2}" y2="${my}" stroke="${s.ln}" stroke-width="1.2"/>`;
     o+=node(s,mx,my,mw,bh,c,ярлM2[i],яfsM2);
   });
-  const прим=строка(дан&&дан.note,'запрос идёт через шлюз, ведомства не связаны напрямую');
+  const прим=строка(дан&&дан.note,ОБР_egov.note);
   o+=txt(s,x+20,y+h-18,t(s,ужать(прим,w-40,7.5,6.5)[0]),7.5,s.wl,s.tm,null);
   return wrapSvg(s,o);
 }
 
 // 4 ── Событийная шина
+const ОБР_bus={title:'Событийная шина',bus:'Kafka',
+  producers:['Заказы','Платежи','Склад'].map(л=>({label:л})),
+  consumers:['Аналитика','Уведомл.','Архив'].map(л=>({label:л}))};
 function elBus(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Событийная шина');
+  const заг=строка(дан&&дан.title,ОБР_bus.title);
   o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const bw=(w-52)/3-8, byTop=y+42, byBot=y+h-58, bh=20;
   const busY=y+h/2+2, busH=s.mode==='clay'?18:14;
   // источников и подписчиков по три: под них расчерчены обе полки
   const обрPR=[['Заказы',s.ac3],['Платежи',s.ac2],['Склад',s.pos]];
   const обрCO=[['Аналитика',s.ac2],['Уведомл.',s.ac3],['Архив',s.pos]];
-  const свести=(пришло,обр)=>{const д=ряды(пришло,обр.map(([л])=>({label:л})),3);
+  const свести=(пришло,обр,обрОБР)=>{const д=ряды(пришло,обрОБР,3);
     return обр.map(([л,c],i)=>[String(д[i]&&д[i].label!=null?д[i].label:л),c]);};
-  const PR=свести(дан&&дан.producers,обрPR), CO=свести(дан&&дан.consumers,обрCO);
+  const PR=свести(дан&&дан.producers,обрPR,ОБР_bus.producers), CO=свести(дан&&дан.consumers,обрCO,ОБР_bus.consumers);
   const [ярлPR,яfsPR]=ужатьНабор(PR.map(п=>п[0]),bw-6,8,6);
   const [ярлCO,яfsCO]=ужатьНабор(CO.map(п=>п[0]),bw-6,8,6);
   PR.forEach((_,i)=>{const px=x+26+i*(bw+12);
     o+=`<line x1="${px+bw/2}" y1="${byTop+bh}" x2="${px+bw/2}" y2="${busY}" stroke="${s.ln}" stroke-width="1.2"/>`;});
   CO.forEach((_,i)=>{const px=x+26+i*(bw+12);
     o+=`<line x1="${px+bw/2}" y1="${busY+busH}" x2="${px+bw/2}" y2="${byBot}" stroke="${s.ln}" stroke-width="1.2"/>`;});
-  const [шина,шfs]=ужать(строка(дан&&дан.bus,'Kafka'),w-70,9,7);
+  const [шина,шfs]=ужать(строка(дан&&дан.bus,ОБР_bus.bus),w-70,9,7);
   o+=node(s,x+26,busY,w-52,busH,s.ac,шина,шfs);
   PR.forEach(([l,c],i)=>o+=node(s,x+26+i*(bw+12),byTop,bw,bh,c,ярлPR[i],яfsPR));
   CO.forEach(([l,c],i)=>o+=node(s,x+26+i*(bw+12),byBot,bw,bh,c,ярлCO[i],яfsCO));
@@ -1199,15 +1227,16 @@ function elBus(s,дан){
 }
 
 // 5 ── Слои системы
+const ОБР_layers={title:'Слои системы',layers:[{label:'Интерфейс',tech:'React · мобильный клиент'},
+      {label:'Прикладной',tech:'REST · GraphQL'},{label:'Домен',tech:'бизнес-правила'},
+      {label:'Данные',tech:'PostgreSQL · S3'}],note:'обращение только к соседнему слою'};
 function elLayers(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Слои системы');
+  const заг=строка(дан&&дан.title,ОБР_layers.title);
   o+=txt(s,x+20,y+22,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const пал=[s.ac3,s.ac,s.ac2,s.pos,s.tm];
-  const L=ряды(дан&&дан.layers,[{label:'Интерфейс',tech:'React · мобильный клиент'},
-      {label:'Прикладной',tech:'REST · GraphQL'},{label:'Домен',tech:'бизнес-правила'},
-      {label:'Данные',tech:'PostgreSQL · S3'}],5)
+  const L=ряды(дан&&дан.layers,ОБР_layers.layers,5)
     .map((сл,i)=>[String(сл.label==null?'':сл.label),String(сл.tech==null?'':сл.tech),пал[i%пал.length]]);
   const bx=x+26, bw=w-52, bh=21, g=4, top=y+30;
   // имя слоя и стек делят одну полосу: сперва ужимается стек, он второстепенный
@@ -1220,7 +1249,7 @@ function elLayers(s,дан){
     o+=txt(s,bx+12,by+13,имена[i],иfs,700,tc,null);
     o+=txt(s,bx+bw-12,by+13,стеки[i],сfs,s.wl,tc,null).replace('<text ','<text text-anchor="end" ');
   });
-  const прим=строка(дан&&дан.note,'обращение только к соседнему слою');
+  const прим=строка(дан&&дан.note,ОБР_layers.note);
   o+=txt(s,x+26,y+h-18,t(s,ужать(прим,bw,7.5,6.5)[0]),7.5,s.wl,s.tm,null);
   return wrapSvg(s,o);
 }
@@ -1242,14 +1271,15 @@ function elBigNum(s){
 }
 
 // 2 ── Три факта
+const ОБР_facts={title:'Проект в цифрах',facts:[{value:'₸497M',label:'бюджет'},{value:'31',label:'специалист'},
+      {value:'5 мес',label:'срок'}]};
 function elFacts(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Проект в цифрах');
+  const заг=строка(дан&&дан.title,ОБР_facts.title);
   o+=txt(s,x+20,y+26,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const пал=[s.ac,s.ac3,s.pos,s.ac2];
-  const F=ряды(дан&&дан.facts,[{value:'₸497M',label:'бюджет'},{value:'31',label:'специалист'},
-      {value:'5 мес',label:'срок'}],4)
+  const F=ряды(дан&&дан.facts,ОБР_facts.facts,4)
     .map((ф,i)=>[String(ф.value==null?'':ф.value),String(ф.label==null?'':ф.label),пал[i%пал.length]]);
   const cw=(w-40)/F.length, top=y+42, bh=94;
   const [подписи,пfs]=ужатьНабор(F.map(ф=>t(s,ф[1])),cw-16,9,6.5);
@@ -1319,14 +1349,15 @@ function elRing(s){
 }
 
 // 5 ── Четыре преимущества
+const ОБР_icons={title:'Что даёт внедрение',items:[{value:'×10',label:'скорость'},{value:'98%',label:'точность'},
+      {value:'₸40M',label:'экономия'},{value:'−80%',label:'время'}],note:'по данным пилота на 3 площадках'};
 function elIcons(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Что даёт внедрение');
+  const заг=строка(дан&&дан.title,ОБР_icons.title);
   o+=txt(s,x+20,y+26,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const пал=[s.ac,s.ac3,s.ac2,s.pos];
-  const I=ряды(дан&&дан.items,[{value:'×10',label:'скорость'},{value:'98%',label:'точность'},
-      {value:'₸40M',label:'экономия'},{value:'−80%',label:'время'}],4)
+  const I=ряды(дан&&дан.items,ОБР_icons.items,4)
     .map((э,i)=>[String(э.value==null?'':э.value),String(э.label==null?'':э.label),пал[i%пал.length]]);
   const cw=(w-40)/I.length, top=y+44;
   const [подписи,пfs]=ужатьНабор(I.map(э=>t(s,э[1])),cw-10,9,6.5);
@@ -1345,27 +1376,28 @@ function elIcons(s,дан){
     o+=txt(s,ccx,top+r*2+20,подписи[i],пfs,s.wl,s.ts,null).replace('<text ','<text text-anchor="middle" ');
   });
   o+=`<line x1="${x+20}" y1="${y+h-30}" x2="${x+w-20}" y2="${y+h-30}" stroke="${s.ln}" stroke-width="1"/>`;
-  const прим=строка(дан&&дан.note,'по данным пилота на 3 площадках');
+  const прим=строка(дан&&дан.note,ОБР_icons.note);
   o+=txt(s,x+20,y+h-18,t(s,ужать(прим,w-40,8.5,7)[0]),8.5,s.wl,s.tm,null);
   return wrapSvg(s,o);
 }
 
 // 6 ── Цитата с цифрами
+const ОБР_quote={quote:['Обработка документов','ускорилась в десять раз.'],author:'Асель Сейтова · CIO',
+  stats:[{value:'×10',label:'быстрее'},{value:'98%',label:'точность'},{value:'₸40M',label:'в год'}]};
 function elQuote(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
   const lx=x+22, qc=s.mode==='brutal'?s.ink:s.ac;
   o+=txt(s,lx,y+44,'«',40,700,bgTx(s,qc),null);
   // цитата в одну-две строки, ширина ограничена кавычкой слева
-  const цит=ряды(дан&&дан.quote,['Обработка документов','ускорилась в десять раз.'],2).map(String);
+  const цит=ряды(дан&&дан.quote,ОБР_quote.quote,2).map(String);
   const [строкиЦ,цfs]=ужатьНабор(цит.map(с=>t(s,с)),x+w-22-(lx+24),11.5,8.5);
   строкиЦ.forEach((с,i)=>o+=txt(s,lx+24,y+34+i*16,с,цfs,s.wl,s.tp,null));
-  const авт=строка(дан&&дан.author,'Асель Сейтова · CIO');
+  const авт=строка(дан&&дан.author,ОБР_quote.author);
   o+=txt(s,lx+24,y+70,t(s,ужать(авт,x+w-22-(lx+24),9,7)[0]),9,s.wl,s.tm,null);
   o+=`<line x1="${lx}" y1="${y+86}" x2="${x+w-22}" y2="${y+86}" stroke="${s.ln}" stroke-width="1"/>`;
   const палЦ=[s.ac,s.ac3,s.pos];
-  const S=ряды(дан&&дан.stats,[{value:'×10',label:'быстрее'},{value:'98%',label:'точность'},
-      {value:'₸40M',label:'в год'}],3)
+  const S=ряды(дан&&дан.stats,ОБР_quote.stats,3)
     .map((э,i)=>[String(э.value==null?'':э.value),String(э.label==null?'':э.label),палЦ[i%3]]);
   const cw=(w-44)/S.length;
   const [подписиЦ,пfsЦ]=ужатьНабор(S.map(э=>t(s,э[1])),cw-8,8.5,6.5);
@@ -1378,15 +1410,17 @@ function elQuote(s,дан){
 }
 
 // 7 ── До и после
+const ОБР_before={title:'Что изменилось',before:['3 дня','10 ошибок','вручную'],after:['4 минуты','0 ошибок','автоматом'],
+  note:'срок · брак · контроль'};
 function elBefore(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Что изменилось');
+  const заг=строка(дан&&дан.title,ОБР_before.title);
   o+=txt(s,x+20,y+26,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   // ритм считан от блока: 13px сверху, 15.6 снизу, шаг строк 18
   const cw=(w-64)/2, top=y+36, bh=86, hdr=top+20, r0=top+38, rs=16;
-  const было=ряды(дан&&дан.before,['3 дня','10 ошибок','вручную'],3).map(String);
-  const стало=ряды(дан&&дан.after,['4 минуты','0 ошибок','автоматом'],3).map(String);
+  const было=ряды(дан&&дан.before,ОБР_before.before,3).map(String);
+  const стало=ряды(дан&&дан.after,ОБР_before.after,3).map(String);
   const cols=[['было',s.tm,было,0],['стало',s.ac,стало,1]];
   // обе колонки берут единый кегль: разный размер читался бы как разная важность
   const [,сfs]=ужатьНабор([...было,...стало].map(в=>t(s,в)),cw-12,11,7.5);
@@ -1398,7 +1432,7 @@ function elBefore(s,дан){
     rows.forEach((v,ri)=>o+=txt(s,bx+cw/2,r0+ri*rs,ужать(t(s,v),cw-12,сfs,сfs)[0],сfs,hi?700:s.wl,tc,null).replace('<text ','<text text-anchor="middle" '));
   });
   o+=txt(s,x+w/2,top+bh/2+5,'→',15,700,s.mode==='brutal'?s.ink:bgTx(s,s.pos),null).replace('<text ','<text text-anchor="middle" ');
-  const прим=строка(дан&&дан.note,'срок · брак · контроль');
+  const прим=строка(дан&&дан.note,ОБР_before.note);
   o+=txt(s,x+20,y+h-18,t(s,ужать(прим,w-40,8.5,7)[0]),8.5,s.wl,s.tm,null);
   return wrapSvg(s,o);
 }
@@ -1453,16 +1487,17 @@ function elThanks(s){
 }
 
 // 4 ── Содержание
+const ОБР_agenda={title:'Содержание',items:['Контекст и задачи','Текущее состояние','Решение на ИИ',
+      'Результаты и эффект','Следующие шаги']};
 function elAgenda(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2;
   const пал=[s.ac,s.ac3,s.ac2,s.pos,s.tm];
-  const пункты=ряды(дан&&дан.items,['Контекст и задачи','Текущее состояние','Решение на ИИ',
-      'Результаты и эффект','Следующие шаги'],6).map(String);
+  const пункты=ряды(дан&&дан.items,ОБР_agenda.items,6).map(String);
   const A=пункты.map((п,i)=>[String(i+1).padStart(2,'0'),п,пал[i%пал.length]]);
   const hh=рост(y+56+(A.length-1)*21+3);   // пунктов больше пяти — холст растёт
   const h=hh-PAD*2;
   let o=frameH(s,hh)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Содержание');
+  const заг=строка(дан&&дан.title,ОБР_agenda.title);
   o+=txt(s,x+22,y+28,t(s,ужать(заг,w-44,13,10)[0]),13,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,null);
   o+=`<line x1="${x+22}" y1="${y+36}" x2="${x+w-22}" y2="${y+36}" stroke="${s.ac}" stroke-width="${s.mode==='brutal'?3:2}"/>`;
   const [пп,пfs]=ужатьНабор(A.map(п=>t(s,п[1])),x+w-22-(x+46),10.5,8);
@@ -1500,10 +1535,11 @@ function elSpeaker(s){
 }
 
 // 6 ── Вопросы и ответы
+const ОБР_faq={items:[{q:'С чего начать внедрение?',a:'с аудита процессов, 2 недели',open:1},
+      {q:'Какие данные нужны?',open:0},{q:'Сроки пилота?',open:0}],title:'Частые вопросы'};
 function elFaq(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2;
-  const Q=ряды(дан&&дан.items,[{q:'С чего начать внедрение?',a:'с аудита процессов, 2 недели',open:1},
-      {q:'Какие данные нужны?',open:0},{q:'Сроки пилота?',open:0}],4)
+  const Q=ряды(дан&&дан.items,ОБР_faq.items,4)
     .map(п=>[String(п.q==null?'':п.q),п.open?1:0,String(п.a==null?'с аудита процессов, 2 недели':п.a)]);
   const bx=x+20, bw=w-40, top=y+42;
   /* низ считается по последнему видимому: у свёрнутого вопроса плашки нет,
@@ -1514,7 +1550,7 @@ function elFaq(s,дан){
   const hh=рост(низQ);   // раскрытых больше одного — холст растёт
   const h=hh-PAD*2;
   let o=frameH(s,hh)+surface(s,x,y,w,h);
-  const заг=строка(дан&&дан.title,'Частые вопросы');
+  const заг=строка(дан&&дан.title,ОБР_faq.title);
   o+=txt(s,x+22,y+28,t(s,ужать(заг,w-44,12,9)[0]),12,s.wl,s.ts,s.ls);
   const [вопр,вfs]=ужатьНабор(Q.map(п=>t(s,п[0])),bw-40,9.5,7);
   let cy=top;
@@ -1539,12 +1575,12 @@ function elFaq(s,дан){
 
 
 const CATS=[
-  ["Диаграммы и данные",[["kpi","KPI-карточка",elKpi],["bars","Прогресс-бары",elBars],["column","Столбчатый график",elColumn],["donut","Кольцевая диаграмма",elDonut],["radar","Радар",elRadar],["gauge","Спидометр",elGauge],["area","Area chart",elArea],["wf","Waterfall",elWaterfall],["heat","Heatmap",elHeat],["tree","Treemap",elTree],["scat","Scatter",elScatter],["spark","Sparklines",elSpark],["bub","Bubble",elBubble],["dumb","Dumbbell",elDumb]]],
-  ["Шаги и процессы",[["arrows","Стрелки-шаги",elArrows],["funnel","Воронка",elFunnel],["timeline","Таймлайн",elTimeline],["cycle","Цикл PDCA",elCycle],["roadmap","Дорожная карта",elRoadmap],["swim","Swimlane",elSwim],["dtree","Дерево решений",elTree2],["loop","Бесконечный цикл",elLoop],["journey","Путь клиента",elJourney],["tcards","Таймлайн карточками",elTCards]]],
-  ["Матрицы и пирамиды",[["pyramid","Пирамида",elPyramid],["swot","SWOT",elSwot],["m22","Матрица 2×2",elM22],["venn","Диаграмма Венна",elVenn],["fmatrix","Таблица сравнения",elFMatrix]]],
-  ["AI и нейросети",[["net","Нейронная сеть",elNet],["trans","Блок трансформера",elTrans],["rag","Конвейер RAG",elRag],["llm","Сравнение моделей",elLLM],["vec","Векторное пространство",elVec]]],
-  ["Архитектура и интеграции",[["micro","Микросервисы",elMicro],["cicd","Конвейер CI/CD",elCicd],["egov","Межведомственный шлюз",elEgov],["bus","Событийная шина",elBus],["layers","Слои системы",elLayers]]],
-  ["Числа и инфографика",[["bignum","Большое число",elBigNum],["facts","Три факта",elFacts],["statcard","Показатель с трендом",elStatCard],["ring","Кольцо прогресса",elRing],["icons","Четыре преимущества",elIcons],["quote","Цитата с цифрами",elQuote],["before","До и после",elBefore]]],
-  ["Переходные слайды",[["divider","Разделитель раздела",elDivider],["chapter","Открытие главы",elChapter],["thanks","Финальный слайд",elThanks],["agenda","Содержание",elAgenda],["speaker","Профиль спикера",elSpeaker],["faq","Вопросы и ответы",elFaq]]]
+  ["Диаграммы и данные",[["kpi","KPI-карточка",elKpi],["bars","Прогресс-бары",elBars,ОБР_bars],["column","Столбчатый график",elColumn],["donut","Кольцевая диаграмма",elDonut,ОБР_donut],["radar","Радар",elRadar],["gauge","Спидометр",elGauge],["area","Area chart",elArea],["wf","Waterfall",elWaterfall],["heat","Heatmap",elHeat,ОБР_heat],["tree","Treemap",elTree],["scat","Scatter",elScatter,ОБР_scat],["spark","Sparklines",elSpark],["bub","Bubble",elBubble],["dumb","Dumbbell",elDumb]]],
+  ["Шаги и процессы",[["arrows","Стрелки-шаги",elArrows,ОБР_arrows],["funnel","Воронка",elFunnel,ОБР_funnel],["timeline","Таймлайн",elTimeline,ОБР_timeline],["cycle","Цикл PDCA",elCycle,ОБР_cycle],["roadmap","Дорожная карта",elRoadmap,ОБР_roadmap],["swim","Swimlane",elSwim,ОБР_swim],["dtree","Дерево решений",elTree2],["loop","Бесконечный цикл",elLoop,ОБР_loop],["journey","Путь клиента",elJourney],["tcards","Таймлайн карточками",elTCards,ОБР_tcards]]],
+  ["Матрицы и пирамиды",[["pyramid","Пирамида",elPyramid],["swot","SWOT",elSwot,ОБР_swot],["m22","Матрица 2×2",elM22,ОБР_m22],["venn","Диаграмма Венна",elVenn],["fmatrix","Таблица сравнения",elFMatrix,ОБР_fmatrix]]],
+  ["AI и нейросети",[["net","Нейронная сеть",elNet,ОБР_net],["trans","Блок трансформера",elTrans],["rag","Конвейер RAG",elRag,ОБР_rag],["llm","Сравнение моделей",elLLM,ОБР_llm],["vec","Векторное пространство",elVec]]],
+  ["Архитектура и интеграции",[["micro","Микросервисы",elMicro,ОБР_micro],["cicd","Конвейер CI/CD",elCicd,ОБР_cicd],["egov","Межведомственный шлюз",elEgov,ОБР_egov],["bus","Событийная шина",elBus,ОБР_bus],["layers","Слои системы",elLayers,ОБР_layers]]],
+  ["Числа и инфографика",[["bignum","Большое число",elBigNum],["facts","Три факта",elFacts,ОБР_facts],["statcard","Показатель с трендом",elStatCard],["ring","Кольцо прогресса",elRing],["icons","Четыре преимущества",elIcons,ОБР_icons],["quote","Цитата с цифрами",elQuote,ОБР_quote],["before","До и после",elBefore,ОБР_before]]],
+  ["Переходные слайды",[["divider","Разделитель раздела",elDivider],["chapter","Открытие главы",elChapter],["thanks","Финальный слайд",elThanks],["agenda","Содержание",elAgenda,ОБР_agenda],["speaker","Профиль спикера",elSpeaker],["faq","Вопросы и ответы",elFaq,ОБР_faq]]]
 ];
 export { CATS };
