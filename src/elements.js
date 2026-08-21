@@ -171,12 +171,20 @@ function radPt(cx,cy,R,i,n,v){const a=-Math.PI/2+i*2*Math.PI/n;const r=R*v/100;
   return [+(cx+r*Math.cos(a)).toFixed(1),+(cy+r*Math.sin(a)).toFixed(1)];}
 
 // 5 ── Радар
-function elRadar(s){
+const ОБР_radar={title:'Профиль решения',axes:[
+  {label:'Скорость',v:86},{label:'Качество',v:62},{label:'Цена',v:92},
+  {label:'Охват',v:56},{label:'Сервис',v:76},{label:'Риск',v:68}]};
+function elRadar(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  const cx=x+w/2,cy=y+h/2,R=40,N=6;
-  const vals=[86,62,92,56,76,68],labs=['Скорость','Качество','Цена','Охват','Сервис','Риск'];
-  o+=txt(s,x+20,y+24,t(s,'Профиль решения'),12,s.wl,s.ts,s.ls);
+  const cx=x+w/2,cy=y+h/2,R=40;
+  const оси=ряды(дан&&дан.axes,ОБР_radar.axes,7);
+  const N=оси.length;
+  // договор задаёт границы 0–100 — точка не выходит за сетку и не проваливается за центр
+  const vals=оси.map(о=>Math.max(0,Math.min(100,Number(о.v)||0)));
+  const labs=оси.map(о=>String(о.label==null?'':о.label));
+  const заг=строка(дан&&дан.title,ОБР_radar.title);
+  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const dash=s.mode==='line'?' stroke-dasharray="3 3"':'';
   [100,66,33].forEach(k=>{
     const pts=[...Array(N)].map((_,i)=>radPt(cx,cy,R,i,N,k).join(',')).join(' ');
@@ -196,9 +204,14 @@ function elRadar(s){
   if(s.mode!=='line'&&s.mode!=='retro')
     vals.forEach((v,i)=>{const p=radPt(cx,cy,R,i,N,v);
       o+=`<circle cx="${p[0]}" cy="${p[1]}" r="${s.mode==='clay'?4:3}" fill="${s.ac}"${gl}/>`;});
-  labs.forEach((l,i)=>{const p=radPt(cx,cy,R+17,i,N,100);
+  // подпись — общий кегль на набор осей; ширина не константа, а угловой шаг сетки:
+  // хорда между соседними точками подписи на радиусе R+17 (при семи осях шаг у́же)
+  const Rl=R+17;
+  const хорда=2*Rl*Math.sin(Math.PI/N);
+  const [лаб,лfs]=ужатьНабор(labs.map(l=>t(s,l)),Math.max(20,хорда-6),9,6.5);
+  labs.forEach((l,i)=>{const p=radPt(cx,cy,Rl,i,N,100);
     const an=p[0]>cx+3?'start':p[0]<cx-3?'end':'middle';
-    o+=txt(s,p[0],p[1]+3,t(s,l),9,s.wl,s.tm,null).replace('<text ',`<text text-anchor="${an}" `);});
+    o+=txt(s,p[0],p[1]+3,лаб[i],лfs,s.wl,s.tm,null).replace('<text ',`<text text-anchor="${an}" `);});
   return wrapSvg(s,o);
 }
 
@@ -272,29 +285,65 @@ function elArea(s){
 }
 
 // 8 ── Waterfall
-function elWaterfall(s){
+const ОБР_wf={title:'Прибыль по этапам',steps:[
+  {label:'База',v:100,type:'t'},{label:'Услуги',v:42,type:'p'},{label:'Затраты',v:-30,type:'n'},
+  {label:'Лицензии',v:26,type:'p'},{label:'Итог',v:138,type:'t'}]};
+function elWaterfall(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2,iso=s.mode==='iso';
   let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
   const ox=x+24,oy=y+42,pw=w-56-(iso?s.dx:0),ph=h-80;
-  o+=txt(s,x+20,y+24,t(s,'Прибыль по этапам'),12,s.wl,s.ts,s.ls);
-  const steps=[{l:'База',v:100,type:'t'},{l:'Услуги',v:42,type:'p'},{l:'Затраты',v:-30,type:'n'},{l:'Лицензии',v:26,type:'p'},{l:'Итог',v:138,type:'t'}];
-  const max=150,bw=Math.floor(pw/steps.length)-9,base=oy+ph;
+  const заг=строка(дан&&дан.title,ОБР_wf.title);
+  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  const шагиДан=ряды(дан&&дан.steps,ОБР_wf.steps,7);
+  const N2=шагиДан.length;
+  // тип нормализуется к перечислению договора; вне перечисления — приращение,
+  // самый безобидный случай (не меняет ни базу, ни итог отдельным пересчётом)
+  const обр=шагиДан.map(ш=>({
+    l:String(ш.label==null?'':ш.label),
+    v:Number(ш.v)||0,
+    type:['t','p','n'].includes(ш.type)?ш.type:'p'
+  }));
+  /* Накопление считается один раз и используется дважды: сперва чтобы вывести
+     масштаб из фактически достигнутых уровней (а не из константы 150 — при своих
+     данных одиночный крупный шаг мог вытолкнуть столбец за карточку), затем чтобы
+     нарисовать столбцы. Итоговый столбец типа t берёт значение из накопления,
+     а не из данных — иначе можно передать несходящуюся сумму и получить график,
+     который врёт арифметикой. Если переданная сумма разошлась с накопленной,
+     это решение молча предпочитает верную арифметику дословной, без отдельного
+     предупреждения — сервер (src/index.js) для этого наряда не менялся */
+  let накоп=0;
+  const шаги=обр.map((ш,i)=>{
+    let v2=ш.v;
+    if(ш.type==='t'&&i===N2-1) v2=накоп;
+    if(ш.type==='t') накоп=v2; else накоп+=v2;
+    return {l:ш.l,type:ш.type,v:v2,cum:накоп};
+  });
+  const пик=Math.max(...шаги.map(ш=>Math.abs(ш.v)),...шаги.map(ш=>Math.abs(ш.cum)));
+  // запас над пиком, округлённый вверх до десятка — так же, как у образца
+  // (100/42/-30/26/138 даёт пик 142, а этот округлятор — ровно те же 150)
+  const max=Math.max(10,Math.ceil(пик/10)*10);
+  const bw=Math.floor(pw/N2)-9,base=oy+ph;
   const hOf=v=>Math.round(ph*Math.abs(v)/max);
   const negCol=s.mode==='brutal'||s.mode==='line'||s.mode==='duotone'||s.mode==='aurora'?s.ac3:s.neg;
   const posCol=s.mode==='duotone'||s.mode==='aurora'?s.ac2:s.pos;
-  let cum=0,prevTop=null;
+  let prevTop=null;
   o+=`<line x1="${ox}" y1="${base}" x2="${ox+pw}" y2="${base}" stroke="${s.ln}" stroke-width="${s.mode==='brutal'?3:1}"/>`;
-  steps.forEach((st,i)=>{
+  // подписи — общий кегль на ряд; ширина берётся из шага сетки (bw+9 — полная
+  // дорожка на шаг вместе с зазором), а не из голой ширины столбца: у образца
+  // «Лицензии» (8 знаков) при узкой bw-4 уже не умещалась при кегле 9 и получала
+  // чужой, чем раньше, размер шрифта — совпадение с эталоном ломалось
+  const [метки,мfs]=ужатьНабор(шаги.map(ш=>t(s,ш.l)),bw+9-3,9,6.5);
+  шаги.forEach((st,i)=>{
     const bx=ox+i*(bw+9);
     let top,bh;
-    if(st.type==='t'){bh=hOf(st.v);top=base-bh;cum=st.v;}
-    else{bh=hOf(st.v);cum+= st.v;top=st.v>0?base-hOf(cum):base-hOf(cum)-bh;}
+    if(st.type==='t'){bh=hOf(st.v);top=base-bh;}
+    else{bh=hOf(st.v);top=st.v>0?base-hOf(st.cum):base-hOf(st.cum)-bh;}
     const col=st.type==='t'?s.ac:st.v>0?posCol:negCol;
     if(prevTop!==null&&s.mode!=='retro')
       o+=`<line x1="${bx-9}" y1="${prevTop}" x2="${bx}" y2="${prevTop}" stroke="${s.ln}" stroke-width="1" stroke-dasharray="3 2"/>`;
     o+=shape(s,bx,top,bw,bh,col,0);
     prevTop=st.v>0||st.type==='t'?top:top+bh;
-    o+=txt(s,bx+bw/2,base+18,t(s,st.l),9,s.wl,st.type==='t'?s.ts:s.tm,null).replace('<text ','<text text-anchor="middle" ');
+    o+=txt(s,bx+bw/2,base+18,метки[i],мfs,s.wl,st.type==='t'?s.ts:s.tm,null).replace('<text ','<text text-anchor="middle" ');
     const vl=st.type==='t'?String(st.v):(st.v>0?'+':'')+st.v;
     o+=txt(s,bx+bw/2,top-6,vl,10,700,col,null).replace('<text ','<text text-anchor="middle" ');
   });
@@ -1714,7 +1763,7 @@ function elFaq(s,дан){
 
 
 const CATS=[
-  ["Диаграммы и данные",[["kpi","KPI-карточка",elKpi,ОБР_kpi],["bars","Прогресс-бары",elBars,ОБР_bars],["column","Столбчатый график",elColumn,ОБР_column],["donut","Кольцевая диаграмма",elDonut,ОБР_donut],["radar","Радар",elRadar],["gauge","Спидометр",elGauge,ОБР_gauge],["area","Area chart",elArea],["wf","Waterfall",elWaterfall],["heat","Heatmap",elHeat,ОБР_heat],["tree","Treemap",elTree],["scat","Scatter",elScatter,ОБР_scat],["spark","Sparklines",elSpark],["bub","Bubble",elBubble,ОБР_bub],["dumb","Dumbbell",elDumb,ОБР_dumb]]],
+  ["Диаграммы и данные",[["kpi","KPI-карточка",elKpi,ОБР_kpi],["bars","Прогресс-бары",elBars,ОБР_bars],["column","Столбчатый график",elColumn,ОБР_column],["donut","Кольцевая диаграмма",elDonut,ОБР_donut],["radar","Радар",elRadar,ОБР_radar],["gauge","Спидометр",elGauge,ОБР_gauge],["area","Area chart",elArea],["wf","Waterfall",elWaterfall,ОБР_wf],["heat","Heatmap",elHeat,ОБР_heat],["tree","Treemap",elTree],["scat","Scatter",elScatter,ОБР_scat],["spark","Sparklines",elSpark],["bub","Bubble",elBubble,ОБР_bub],["dumb","Dumbbell",elDumb,ОБР_dumb]]],
   ["Шаги и процессы",[["arrows","Стрелки-шаги",elArrows,ОБР_arrows],["funnel","Воронка",elFunnel,ОБР_funnel],["timeline","Таймлайн",elTimeline,ОБР_timeline,ОГ_timeline],["cycle","Цикл PDCA",elCycle,ОБР_cycle],["roadmap","Дорожная карта",elRoadmap,ОБР_roadmap],["swim","Swimlane",elSwim,ОБР_swim],["dtree","Дерево решений",elTree2],["loop","Бесконечный цикл",elLoop,ОБР_loop],["journey","Путь клиента",elJourney,ОБР_journey],["tcards","Таймлайн карточками",elTCards,ОБР_tcards]]],
   ["Матрицы и пирамиды",[["pyramid","Пирамида",elPyramid],["swot","SWOT",elSwot,ОБР_swot],["m22","Матрица 2×2",elM22,ОБР_m22],["venn","Диаграмма Венна",elVenn,ОБР_venn],["fmatrix","Таблица сравнения",elFMatrix,ОБР_fmatrix]]],
   ["AI и нейросети",[["net","Нейронная сеть",elNet,ОБР_net],["trans","Блок трансформера",elTrans],["rag","Конвейер RAG",elRag,ОБР_rag],["llm","Сравнение моделей",elLLM,ОБР_llm],["vec","Векторное пространство",elVec]]],
