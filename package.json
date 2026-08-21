@@ -11,7 +11,8 @@
     "check": "node tools/audit.js --snapshot tools/baseline.json",
     "baseline": "node tools/audit.js --snapshot tools/baseline.json --write",
     "data": "node tools/data-check.js",
-    "smoke": "node tools/smoke.js"
+    "smoke": "node tools/smoke.js",
+    "host": "node tools/host-check.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0"
