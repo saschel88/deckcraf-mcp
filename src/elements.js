@@ -529,6 +529,15 @@ function elFunnel(s,дан){
 // 3 ── Таймлайн
 const ОБР_timeline={title:'План на год',points:[{period:'Q1',label:'Аудит',done:1},{period:'Q2',label:'Пилот',done:1},
       {period:'Q3',label:'Тираж',done:1},{period:'Q4',label:'Итоги',done:0}]};
+/* Оговорка для describe: draw(пример_данных) у timeline не совпадает побайтово
+   с draw() без данных. Причина ниже, у доли — доля без данных зашита на глаз (.66),
+   а при явных points (даже этом самом массиве) считается как пройдено/всего = 2/3.
+   Отрисовку образца трогать нельзя — она под эталоном 676 пар, поэтому расхождение
+   зафиксировано как известное, а не исправлено. */
+const ОГ_timeline='отрисовка этим примером не совпадает побайтово с отрисовкой без данных: '+
+  'без явных points доля прогресса — зашитая на глаз константа 0.66, а при переданных '+
+  'points (даже этим самым массивом) считается как пройдено/всего = 2/3 ≈ 0.667; '+
+  'отличие — позиция конца прогресс-линии на пиксель-два';
 function elTimeline(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2,iso=s.mode==='iso';
   let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
@@ -1576,7 +1585,7 @@ function elFaq(s,дан){
 
 const CATS=[
   ["Диаграммы и данные",[["kpi","KPI-карточка",elKpi],["bars","Прогресс-бары",elBars,ОБР_bars],["column","Столбчатый график",elColumn],["donut","Кольцевая диаграмма",elDonut,ОБР_donut],["radar","Радар",elRadar],["gauge","Спидометр",elGauge],["area","Area chart",elArea],["wf","Waterfall",elWaterfall],["heat","Heatmap",elHeat,ОБР_heat],["tree","Treemap",elTree],["scat","Scatter",elScatter,ОБР_scat],["spark","Sparklines",elSpark],["bub","Bubble",elBubble],["dumb","Dumbbell",elDumb]]],
-  ["Шаги и процессы",[["arrows","Стрелки-шаги",elArrows,ОБР_arrows],["funnel","Воронка",elFunnel,ОБР_funnel],["timeline","Таймлайн",elTimeline,ОБР_timeline],["cycle","Цикл PDCA",elCycle,ОБР_cycle],["roadmap","Дорожная карта",elRoadmap,ОБР_roadmap],["swim","Swimlane",elSwim,ОБР_swim],["dtree","Дерево решений",elTree2],["loop","Бесконечный цикл",elLoop,ОБР_loop],["journey","Путь клиента",elJourney],["tcards","Таймлайн карточками",elTCards,ОБР_tcards]]],
+  ["Шаги и процессы",[["arrows","Стрелки-шаги",elArrows,ОБР_arrows],["funnel","Воронка",elFunnel,ОБР_funnel],["timeline","Таймлайн",elTimeline,ОБР_timeline,ОГ_timeline],["cycle","Цикл PDCA",elCycle,ОБР_cycle],["roadmap","Дорожная карта",elRoadmap,ОБР_roadmap],["swim","Swimlane",elSwim,ОБР_swim],["dtree","Дерево решений",elTree2],["loop","Бесконечный цикл",elLoop,ОБР_loop],["journey","Путь клиента",elJourney],["tcards","Таймлайн карточками",elTCards,ОБР_tcards]]],
   ["Матрицы и пирамиды",[["pyramid","Пирамида",elPyramid],["swot","SWOT",elSwot,ОБР_swot],["m22","Матрица 2×2",elM22,ОБР_m22],["venn","Диаграмма Венна",elVenn],["fmatrix","Таблица сравнения",elFMatrix,ОБР_fmatrix]]],
   ["AI и нейросети",[["net","Нейронная сеть",elNet,ОБР_net],["trans","Блок трансформера",elTrans],["rag","Конвейер RAG",elRag,ОБР_rag],["llm","Сравнение моделей",elLLM,ОБР_llm],["vec","Векторное пространство",elVec]]],
   ["Архитектура и интеграции",[["micro","Микросервисы",elMicro,ОБР_micro],["cicd","Конвейер CI/CD",elCicd,ОБР_cicd],["egov","Межведомственный шлюз",elEgov,ОБР_egov],["bus","Событийная шина",elBus,ОБР_bus],["layers","Слои системы",elLayers,ОБР_layers]]],
