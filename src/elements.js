@@ -1195,15 +1195,23 @@ function elNet(s,дан){
 }
 
 // 2 ── Блок трансформера
-function elTrans(s){
+const ОБР_trans={title:'Блок трансформера',
+  rows:['Add & Norm','Feed Forward','Add & Norm','Multi-Head Attention','Input Embedding'],
+  повторы:'×12'};
+function elTrans(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2,iso=s.mode==='iso';
   let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
-  o+=txt(s,x+20,y+24,t(s,'Блок трансформера'),12,s.wl,s.ts,s.ls);
+  const заг=строка(дан&&дан.title,ОБР_trans.title);
+  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   const dxo=iso?-s.dx:0;
   // слева поле под остаточные связи, справа под скобку повторов
   const bx=x+46, bw=w-46-36+dxo, bh=17, g=5, top=y+40;
   // сверху вниз: выход → norm → ffn → norm → внимание → эмбеддинг
-  const R=[['Add & Norm',s.tm],['Feed Forward',s.ac2],['Add & Norm',s.tm],['Multi-Head Attention',s.ac],['Input Embedding',s.ac3]];
+  // порядок и число рядов — определение блока трансформера, не вёрстка: остаточные связи
+  // (skip ниже) нарисованы по этим позициям. Меняются подписи, структура — нет
+  const цв=[s.tm,s.ac2,s.tm,s.ac,s.ac3];
+  const ряд=ряды(дан&&дан.rows,ОБР_trans.rows,5);
+  const R=ОБР_trans.rows.map((л,i)=>[ряд[i]!=null?String(ряд[i]):л,цв[i]]);
   const rowY=i=>top+i*(bh+g);
   const sw=s.mode==='brutal'?2.2:s.mode==='clay'?2.6:1.3;
   // остаточная связь: от входа подслоя влево, вверх и в Add & Norm над ним
@@ -1217,8 +1225,13 @@ function elTrans(s){
            `<polygon points="${bx-5},${yAN-3.2} ${bx},${yAN} ${bx-5},${yAN+3.2}" fill="${s.ac}" opacity=".8"/>`;
   };
   o+=skip(3,2)+skip(1,0);
+  // подпись «Multi-Head Attention» (20 знаков) — самая длинная в библиотеке; при кегле 8.5
+  // это ≈93.5px (мера = длина·fs·0.55). Порог берём из геометрии ряда (bw минус отступы
+  // по 8px с каждой стороны): на самом широком стиле (не iso) bw=190 ⇒ порог 174px,
+  // на iso bw=168 ⇒ порог 152px — запас есть на обоих
+  const [ярлR,яfsR]=ужатьНабор(R.map(п=>п[0]),bw-16,8.5,6.5);
   R.forEach(([l,c],i)=>{
-    o+=node(s,bx,rowY(i),bw,bh,c,l,8.5);
+    o+=node(s,bx,rowY(i),bw,bh,c,ярлR[i],яfsR);
     if(i<4){ // поток снизу вверх — стрелка смотрит вверх
       const my=rowY(i)+bh, cxm=bx+bw/2;
       o+=`<line x1="${cxm}" y1="${my+g}" x2="${cxm}" y2="${my+1}" stroke="${s.ln}" stroke-width="${sw}"/>`;
@@ -1227,7 +1240,11 @@ function elTrans(s){
   // скобка «повторить N раз»
   const brx=bx+bw+13, y0=rowY(0)+2, y1=rowY(3)+bh-2;
   o+=`<path d="M ${brx-4} ${y0} H ${brx} V ${y1} H ${brx-4}" fill="none" stroke="${s.tm}" stroke-width="1.2"/>`;
-  o+=txt(s,brx+3,(y0+y1)/2+3,'×12',9,700,s.mode==='brutal'?s.ink:bgTx(s,s.ac),null);
+  // справа от скобки до внутреннего края карточки геометрически ровно 20px
+  // (36 отступа под блок скобки минус 13 до скобки минус 3 отступа текста) — на всех стилях одинаково
+  const прав=x+(iso?w-s.dx:w);
+  const [повТ,повFs]=ужать(строка(дан&&дан.повторы,ОБР_trans.повторы),прав-(brx+3),9,6.5);
+  o+=txt(s,brx+3,(y0+y1)/2+3,повТ,повFs,700,s.mode==='brutal'?s.ink:bgTx(s,s.ac),null);
   return wrapSvg(s,o);
 }
 
@@ -1891,7 +1908,7 @@ const CATS=[
   ["Диаграммы и данные",[["kpi","KPI-карточка",elKpi,ОБР_kpi],["bars","Прогресс-бары",elBars,ОБР_bars],["column","Столбчатый график",elColumn,ОБР_column],["donut","Кольцевая диаграмма",elDonut,ОБР_donut],["radar","Радар",elRadar,ОБР_radar],["gauge","Спидометр",elGauge,ОБР_gauge],["area","Area chart",elArea,ОБР_area],["wf","Waterfall",elWaterfall,ОБР_wf],["heat","Heatmap",elHeat,ОБР_heat],["tree","Treemap",elTree,ОБР_tree],["scat","Scatter",elScatter,ОБР_scat],["spark","Sparklines",elSpark,ОБР_spark],["bub","Bubble",elBubble,ОБР_bub],["dumb","Dumbbell",elDumb,ОБР_dumb]]],
   ["Шаги и процессы",[["arrows","Стрелки-шаги",elArrows,ОБР_arrows],["funnel","Воронка",elFunnel,ОБР_funnel],["timeline","Таймлайн",elTimeline,ОБР_timeline,ОГ_timeline],["cycle","Цикл PDCA",elCycle,ОБР_cycle],["roadmap","Дорожная карта",elRoadmap,ОБР_roadmap],["swim","Swimlane",elSwim,ОБР_swim],["dtree","Дерево решений",elTree2,ОБР_dtree],["loop","Бесконечный цикл",elLoop,ОБР_loop],["journey","Путь клиента",elJourney,ОБР_journey],["tcards","Таймлайн карточками",elTCards,ОБР_tcards]]],
   ["Матрицы и пирамиды",[["pyramid","Пирамида",elPyramid,ОБР_pyramid],["swot","SWOT",elSwot,ОБР_swot],["m22","Матрица 2×2",elM22,ОБР_m22],["venn","Диаграмма Венна",elVenn,ОБР_venn],["fmatrix","Таблица сравнения",elFMatrix,ОБР_fmatrix]]],
-  ["AI и нейросети",[["net","Нейронная сеть",elNet,ОБР_net],["trans","Блок трансформера",elTrans],["rag","Конвейер RAG",elRag,ОБР_rag],["llm","Сравнение моделей",elLLM,ОБР_llm],["vec","Векторное пространство",elVec,ОБР_vec]]],
+  ["AI и нейросети",[["net","Нейронная сеть",elNet,ОБР_net],["trans","Блок трансформера",elTrans,ОБР_trans],["rag","Конвейер RAG",elRag,ОБР_rag],["llm","Сравнение моделей",elLLM,ОБР_llm],["vec","Векторное пространство",elVec,ОБР_vec]]],
   ["Архитектура и интеграции",[["micro","Микросервисы",elMicro,ОБР_micro],["cicd","Конвейер CI/CD",elCicd,ОБР_cicd],["egov","Межведомственный шлюз",elEgov,ОБР_egov],["bus","Событийная шина",elBus,ОБР_bus],["layers","Слои системы",elLayers,ОБР_layers]]],
   ["Числа и инфографика",[["bignum","Большое число",elBigNum,ОБР_bignum],["facts","Три факта",elFacts,ОБР_facts],["statcard","Показатель с трендом",elStatCard,ОБР_statcard],["ring","Кольцо прогресса",elRing,ОБР_ring],["icons","Четыре преимущества",elIcons,ОБР_icons],["quote","Цитата с цифрами",elQuote,ОБР_quote],["before","До и после",elBefore,ОБР_before]]],
   ["Переходные слайды",[["divider","Разделитель раздела",elDivider,ОБР_divider],["chapter","Открытие главы",elChapter,ОБР_chapter],["thanks","Финальный слайд",elThanks,ОБР_thanks],["agenda","Содержание",elAgenda,ОБР_agenda],["speaker","Профиль спикера",elSpeaker,ОБР_speaker],["faq","Вопросы и ответы",elFaq,ОБР_faq]]]
