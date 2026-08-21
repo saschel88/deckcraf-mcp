@@ -98,24 +98,33 @@ function elBars(s,дан){
 }
 
 // 3 ── Столбчатый график
-function elColumn(s){
+const ОБР_column={title:'Выручка по кварталам',bars:[{label:'Q1',v:52},{label:'Q2',v:71},{label:'Q3',v:45},{label:'Q4',v:88,hi:true},{label:'Q5',v:63}]};
+function elColumn(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   const iso=s.mode==='iso';
   let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
   const ox=x+26,oy=y+22,pw=w-58,ph=h-98;
-  o+=txt(s,ox,oy+12,t(s,'Выручка по кварталам'),12,s.wl,s.ts,s.ls);
-  const vals=[52,71,45,88,63],labs=['Q1','Q2','Q3','Q4','Q5'];
-  const bw=Math.floor(pw/vals.length)-10,baseY=oy+28+ph;
+  const заг=строка(дан&&дан.title,ОБР_column.title);
+  o+=txt(s,ox,oy+12,t(s,ужать(заг,pw,12,9)[0]),12,s.wl,s.ts,s.ls);
+  const ряд=ряды(дан&&дан.bars,ОБР_column.bars,7);
+  // масштаб — от максимума переданных значений, но не меньше 100: договор просит
+  // не нормировать, а привычные проценты (0–100) при этом ведут себя как раньше
+  const max=Math.max(100,...ряд.map(б=>Number(б.v)||0));
+  const bw=Math.floor(pw/ряд.length)-10,baseY=oy+28+ph;
   // ось
   if(s.mode==='line'||s.mode==='flat'||s.mode==='glass'||s.mode==='aurora')
     o+=`<line x1="${ox}" y1="${baseY}" x2="${ox+pw}" y2="${baseY}" stroke="${s.ln}" stroke-width="1"/>`;
   if(s.mode==='brutal'||s.mode==='retro')
     o+=`<rect x="${ox}" y="${baseY}" width="${pw}" height="${s.mode==='brutal'?3:2}" fill="${s.mode==='brutal'?'#000':s.track}"/>`;
-  vals.forEach((v,i)=>{
-    const bh=Math.round(ph*v/100),bx=ox+i*(bw+10);
-    const col=i===3?s.ac:(s.mode==='duotone'||s.mode==='gradient'?s.ac2:s.mode==='memphis'?[s.ac,s.ts,s.ac3,s.ac,s.pos][i]:s.ac3);
+  const пал=[s.ac,s.ts,s.ac3,s.ac,s.pos];   // порядок цветов memphis, как в образце
+  // подписи — общий кегль на ряд, ширина берётся из числа столбцов, а не константой
+  const [метки,мfs]=ужатьНабор(ряд.map(б=>t(s,String(б.label==null?'':б.label))),bw,11,7);
+  ряд.forEach((б,i)=>{
+    const v=Math.max(0,Number(б.v)||0),hi=!!б.hi;
+    const bh=Math.round(ph*v/max),bx=ox+i*(bw+10);
+    const col=hi?s.ac:(s.mode==='duotone'||s.mode==='gradient'?s.ac2:s.mode==='memphis'?пал[i%5]:s.ac3);
     o+=shape(s,bx,baseY-bh,bw,bh,col,0);
-    o+=txt(s,bx+bw/2,baseY+21,labs[i],11,s.wl,i===3?(s.mode==='brutal'?s.tp:s.ac):s.tm,null).replace('<text ','<text text-anchor="middle" ');
+    o+=txt(s,bx+bw/2,baseY+21,метки[i],мfs,s.wl,hi?(s.mode==='brutal'?s.tp:s.ac):s.tm,null).replace('<text ','<text text-anchor="middle" ');
   });
   return wrapSvg(s,o);
 }
@@ -895,7 +904,8 @@ function elM22(s,дан){
 }
 
 // 4 ── Диаграмма Венна
-function elVenn(s){
+const ОБР_venn={left:'Бизнес',right:'ИТ',center:['Цифровая','трансформация']};
+function elVenn(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
   o+=txt(s,x+20,y+26,t(s,'Пересечение зон'),12,s.wl,s.ts,s.ls);
@@ -913,12 +923,21 @@ function elVenn(s){
   // контурный только line; у brutal круги полупрозрачные и светлые — подпись тёмная
   const outline=s.mode==='line', pale=s.mode==='brutal';
   const lab=c=>pale?'#000':outline?c:nodeTx(s,c);
-  o+=txt(s,cx-d-16,cy+4,t(s,'Бизнес'),9.5,600,lab(s.ac),null).replace('<text ','<text text-anchor="middle" ');
-  o+=txt(s,cx+d+16,cy+4,t(s,'ИТ'),9.5,600,lab(s.ac3),null).replace('<text ','<text text-anchor="middle" ');
+  // подписи кругов — доступная ширина до ближней кромки карточки (симметрично слева и справа)
+  const краяLR=Math.min((cx-d-16)-(x+20),(x+w-20)-(cx+d+16))*2;
+  const left=строка(дан&&дан.left,ОБР_venn.left);
+  const right=строка(дан&&дан.right,ОБР_venn.right);
+  o+=txt(s,cx-d-16,cy+4,t(s,ужать(left,краяLR,9.5,7)[0]),9.5,600,lab(s.ac),null).replace('<text ','<text text-anchor="middle" ');
+  o+=txt(s,cx+d+16,cy+4,t(s,ужать(right,краяLR,9.5,7)[0]),9.5,600,lab(s.ac3),null).replace('<text ','<text text-anchor="middle" ');
   // в зоне пересечения сверху лежит правый круг — от него и считаем
   const ctr=pale?'#000':outline?s.tp:nodeTx(s,s.ac3);
-  o+=txt(s,cx,cy-8,t(s,'Цифровая'),8.5,700,ctr,null).replace('<text ','<text text-anchor="middle" ');
-  o+=txt(s,cx,cy+4,t(s,'трансформация'),8.5,700,ctr,null).replace('<text ','<text text-anchor="middle" ');
+  /* пересечение кругов — самое узкое место на слайде. Буквальная ширина линзы
+     (2r−2d=36px) уже теснее образцовой надписи «трансформация», поэтому граница
+     взята шире (2r−d), но всё равно из геометрии круга, а не константой на глаз */
+  const центр=ряды(дан&&дан.center,ОБР_venn.center,2).map(String);
+  const [стрЦ,цfs]=ужатьНабор(центр.map(с=>t(s,с)),2*r-d,8.5,7);
+  const y0=-8-(стрЦ.length-2)*6;    // при одной строке она центрируется между прежними −8 и +4
+  стрЦ.forEach((с,i)=>o+=txt(s,cx,cy+y0+i*12,с,цfs,700,ctr,null).replace('<text ','<text text-anchor="middle" '));
   return wrapSvg(s,o);
 }
 
@@ -1332,35 +1351,46 @@ function elFacts(s,дан){
 }
 
 // 3 ── Карточка показателя с трендом
-function elStatCard(s){
+const ОБР_statcard={label:'выручка за квартал',value:'₸2.4B',spark:[30,44,38,56,50,68,76],delta:'▲ 23% к прошлому кварталу',note:'план на год выполнен на 62%'};
+function elStatCard(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
   const lx=x+24;
-  o+=txt(s,lx,y+34,t(s,'выручка за квартал'),9.5,s.wl,s.tm,1.8);
-  o+=txt(s,lx,y+80,'₸2.4B',38,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-1.2);
-  // спарклайн справа от числа
+  const label=строка(дан&&дан.label,ОБР_statcard.label);
+  const value=строка(дан&&дан.value,ОБР_statcard.value);
+  const delta=строка(дан&&дан.delta,ОБР_statcard.delta);
+  const note=строка(дан&&дан.note,ОБР_statcard.note);
+  // спарклайн фиксированной ширины 96, справа от числа — шаг зависит от числа точек
   const sx=x+w-24-96, sy=y+58, sw2=96, sh=26;
-  const D=[30,44,38,56,50,68,76], mn=30, mx=76;
-  const pts=D.map((v,i)=>[+(sx+i*sw2/6).toFixed(1),+(sy+sh-(v-mn)/(mx-mn)*sh).toFixed(1)]);
+  const maxWv=sx-14-lx;      // доступная ширина значения до спарклайна
+  o+=txt(s,lx,y+34,t(s,ужать(label,w-48,9.5)[0]),9.5,s.wl,s.tm,1.8);
+  o+=txt(s,lx,y+80,ужать(value,maxWv,38)[0],38,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-1.2);
+  const D=ряды(дан&&дан.spark,ОБР_statcard.spark,9).map(v=>Number(v)||0);
+  const mn=Math.min(...D),mx=Math.max(...D),диап=(mx-mn)||1;
+  const pts=D.map((v,i)=>[+(sx+i*sw2/(D.length-1)).toFixed(1),+(sy+sh-(v-mn)/диап*sh).toFixed(1)]);
   const gl=s.glow?` filter="${s.glow}"`:'';
   let d;
   if(s.mode==='retro'){d=`M ${pts[0][0]} ${pts[0][1]}`;
     for(let i=1;i<pts.length;i++)d+=` L ${pts[i][0]} ${pts[i-1][1]} L ${pts[i][0]} ${pts[i][1]}`;}
   else d='M '+pts.map(p=>p.join(' ')).join(' L ');
   o+=`<path d="${d}" fill="none" stroke="${s.pos}" stroke-width="${s.mode==='brutal'?3:2}" stroke-linejoin="round" stroke-linecap="round"${gl}/>`;
-  if(s.mode!=='line')o+=`<circle cx="${pts[6][0]}" cy="${pts[6][1]}" r="3.2" fill="${s.pos}"${gl}/>`;
-  o+=txt(s,lx,y+112,t(s,'▲ 23% к прошлому кварталу'),10,600,bgTx(s,s.pos),null);
+  if(s.mode!=='line')o+=`<circle cx="${pts[pts.length-1][0]}" cy="${pts[pts.length-1][1]}" r="3.2" fill="${s.pos}"${gl}/>`;
+  o+=txt(s,lx,y+112,t(s,ужать(delta,w-48,10)[0]),10,600,bgTx(s,s.pos),null);
   o+=`<line x1="${lx}" y1="${y+124}" x2="${x+w-24}" y2="${y+124}" stroke="${s.ln}" stroke-width="1"/>`;
-  o+=txt(s,lx,y+144,t(s,'план на год выполнен на 62%'),9,s.wl,s.tm,null);
+  o+=txt(s,lx,y+144,t(s,ужать(note,w-48,9)[0]),9,s.wl,s.tm,null);
   return wrapSvg(s,o);
 }
 
 // 4 ── Кольцо прогресса
-function elRing(s){
+const ОБР_ring={title:'Готовность этапа',value:74,legend:[{label:'Готово',sub:'18 задач'},{label:'В работе',sub:'5 задач'},{label:'Не начато',sub:'2 задачи'}]};
+function elRing(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
-  o+=txt(s,x+20,y+26,t(s,'Готовность этапа'),12,s.wl,s.ts,s.ls);
-  const cx=x+72, cy=y+h/2+12, R=40, V=74;
+  const заг=строка(дан&&дан.title,ОБР_ring.title);
+  o+=txt(s,x+20,y+26,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  const cx=x+72, cy=y+h/2+12, R=40;
+  // договор задаёт границы 0–100 — дуга и подпись за них не выходят
+  const V=Math.max(0,Math.min(100,дан&&дан.value!=null&&!Number.isNaN(Number(дан.value))?Number(дан.value):ОБР_ring.value));
   const SW=s.mode==='clay'?16:s.mode==='line'?2.5:12;
   const C=2*Math.PI*R, gl=s.glow?` filter="${s.glow}"`:'';
   if(s.mode==='retro'){
@@ -1374,11 +1404,17 @@ function elRing(s){
   }
   o+=txt(s,cx,cy+7,V+'%',22,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-.5).replace('<text ','<text text-anchor="middle" ');
   const lx=cx+R+26;
-  [['Готово','18 задач',s.pos],['В работе','5 задач',s.ac],['Не начато','2 задачи',s.tm]].forEach(([l,v,c],i)=>{
-    const ly=cy-26+i*26;
+  const пал=[s.pos,s.ac,s.tm];
+  const лег=ряды(дан&&дан.legend,ОБР_ring.legend,3)
+    .map((л,i)=>[String(л.label==null?'':л.label),String(л.sub==null?'':л.sub),пал[i%3]]);
+  const avail=(x+w-20)-lx;      // ширина легенды — до правой кромки карточки
+  const [имена,иfs]=ужатьНабор(лег.map(л=>t(s,л[0])),avail,9.5,7);
+  const [субт,сfs]=ужатьНабор(лег.map(л=>t(s,л[1])),avail,8.5,6.5);
+  лег.forEach(([,,c],i)=>{
+    const ly=cy-(лег.length-1)*13+i*26;
     o+=`<rect x="${lx}" y="${ly-7}" width="9" height="9" rx="${s.mode==='clay'?4.5:s.mode==='retro'||s.mode==='brutal'?0:2}" fill="${c}"/>`;
-    o+=txt(s,lx+15,ly,t(s,l),9.5,600,s.ts,null);
-    o+=txt(s,lx+15,ly+11,t(s,v),8.5,s.wl,s.tm,null);
+    o+=txt(s,lx+15,ly,имена[i],иfs,600,s.ts,null);
+    o+=txt(s,lx+15,ly+11,субт[i],сfs,s.wl,s.tm,null);
   });
   return wrapSvg(s,o);
 }
@@ -1496,16 +1532,23 @@ function elDivider(s,дан){
 }
 
 // 2 ── Открытие главы
-function elChapter(s){
+const ОБР_chapter={eyebrow:'глава 03',title:'ИИ и автоматизация',lines:['как внедряем искусственный','интеллект в госсекторе'],meta:'12 минут · 4 кейса'};
+function elChapter(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
   const bw=s.mode==='brutal'?8:5, lx=x+22+bw+14;
+  const maxW=(x+w-22)-lx;
   o+=`<rect x="${x+22}" y="${y+26}" width="${bw}" height="${h-52}" rx="${s.mode==='clay'?bw/2:s.mode==='retro'||s.mode==='brutal'?0:2}" fill="${s.ac}"/>`;
-  o+=txt(s,lx,y+42,t(s,'глава 03'),9,700,bgTx(s,s.ac),2.6);
-  o+=txt(s,lx,y+76,t(s,'ИИ и автоматизация'),18,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-.4);
-  o+=txt(s,lx,y+102,t(s,'как внедряем искусственный'),10.5,s.wl,s.ts,null);
-  o+=txt(s,lx,y+118,t(s,'интеллект в госсекторе'),10.5,s.wl,s.ts,null);
-  o+=txt(s,lx,y+142,t(s,'12 минут · 4 кейса'),9,s.wl,s.tm,null);
+  const eyebrow=строка(дан&&дан.eyebrow,ОБР_chapter.eyebrow);
+  const заг=строка(дан&&дан.title,ОБР_chapter.title);
+  const meta=строка(дан&&дан.meta,ОБР_chapter.meta);
+  o+=txt(s,lx,y+42,t(s,ужать(eyebrow,maxW,9)[0]),9,700,bgTx(s,s.ac),2.6);
+  o+=txt(s,lx,y+76,t(s,ужать(заг,maxW,18)[0]),18,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-.4);
+  const строки=ряды(дан&&дан.lines,ОБР_chapter.lines,2).map(String);
+  const [стрГ,гfs]=ужатьНабор(строки.map(с=>t(s,с)),maxW,10.5,7);
+  const y0=102-(стрГ.length-2)*8;   // при одной строке она центрируется на месте прежних двух
+  стрГ.forEach((с,i)=>o+=txt(s,lx,y+y0+i*16,с,гfs,s.wl,s.ts,null));
+  o+=txt(s,lx,y+142,t(s,ужать(meta,maxW,9)[0]),9,s.wl,s.tm,null);
   return wrapSvg(s,o);
 }
 
@@ -1635,12 +1678,12 @@ function elFaq(s,дан){
 
 
 const CATS=[
-  ["Диаграммы и данные",[["kpi","KPI-карточка",elKpi,ОБР_kpi],["bars","Прогресс-бары",elBars,ОБР_bars],["column","Столбчатый график",elColumn],["donut","Кольцевая диаграмма",elDonut,ОБР_donut],["radar","Радар",elRadar],["gauge","Спидометр",elGauge,ОБР_gauge],["area","Area chart",elArea],["wf","Waterfall",elWaterfall],["heat","Heatmap",elHeat,ОБР_heat],["tree","Treemap",elTree],["scat","Scatter",elScatter,ОБР_scat],["spark","Sparklines",elSpark],["bub","Bubble",elBubble],["dumb","Dumbbell",elDumb]]],
+  ["Диаграммы и данные",[["kpi","KPI-карточка",elKpi,ОБР_kpi],["bars","Прогресс-бары",elBars,ОБР_bars],["column","Столбчатый график",elColumn,ОБР_column],["donut","Кольцевая диаграмма",elDonut,ОБР_donut],["radar","Радар",elRadar],["gauge","Спидометр",elGauge,ОБР_gauge],["area","Area chart",elArea],["wf","Waterfall",elWaterfall],["heat","Heatmap",elHeat,ОБР_heat],["tree","Treemap",elTree],["scat","Scatter",elScatter,ОБР_scat],["spark","Sparklines",elSpark],["bub","Bubble",elBubble],["dumb","Dumbbell",elDumb]]],
   ["Шаги и процессы",[["arrows","Стрелки-шаги",elArrows,ОБР_arrows],["funnel","Воронка",elFunnel,ОБР_funnel],["timeline","Таймлайн",elTimeline,ОБР_timeline,ОГ_timeline],["cycle","Цикл PDCA",elCycle,ОБР_cycle],["roadmap","Дорожная карта",elRoadmap,ОБР_roadmap],["swim","Swimlane",elSwim,ОБР_swim],["dtree","Дерево решений",elTree2],["loop","Бесконечный цикл",elLoop,ОБР_loop],["journey","Путь клиента",elJourney],["tcards","Таймлайн карточками",elTCards,ОБР_tcards]]],
-  ["Матрицы и пирамиды",[["pyramid","Пирамида",elPyramid],["swot","SWOT",elSwot,ОБР_swot],["m22","Матрица 2×2",elM22,ОБР_m22],["venn","Диаграмма Венна",elVenn],["fmatrix","Таблица сравнения",elFMatrix,ОБР_fmatrix]]],
+  ["Матрицы и пирамиды",[["pyramid","Пирамида",elPyramid],["swot","SWOT",elSwot,ОБР_swot],["m22","Матрица 2×2",elM22,ОБР_m22],["venn","Диаграмма Венна",elVenn,ОБР_venn],["fmatrix","Таблица сравнения",elFMatrix,ОБР_fmatrix]]],
   ["AI и нейросети",[["net","Нейронная сеть",elNet,ОБР_net],["trans","Блок трансформера",elTrans],["rag","Конвейер RAG",elRag,ОБР_rag],["llm","Сравнение моделей",elLLM,ОБР_llm],["vec","Векторное пространство",elVec]]],
   ["Архитектура и интеграции",[["micro","Микросервисы",elMicro,ОБР_micro],["cicd","Конвейер CI/CD",elCicd,ОБР_cicd],["egov","Межведомственный шлюз",elEgov,ОБР_egov],["bus","Событийная шина",elBus,ОБР_bus],["layers","Слои системы",elLayers,ОБР_layers]]],
-  ["Числа и инфографика",[["bignum","Большое число",elBigNum,ОБР_bignum],["facts","Три факта",elFacts,ОБР_facts],["statcard","Показатель с трендом",elStatCard],["ring","Кольцо прогресса",elRing],["icons","Четыре преимущества",elIcons,ОБР_icons],["quote","Цитата с цифрами",elQuote,ОБР_quote],["before","До и после",elBefore,ОБР_before]]],
-  ["Переходные слайды",[["divider","Разделитель раздела",elDivider,ОБР_divider],["chapter","Открытие главы",elChapter],["thanks","Финальный слайд",elThanks,ОБР_thanks],["agenda","Содержание",elAgenda,ОБР_agenda],["speaker","Профиль спикера",elSpeaker,ОБР_speaker],["faq","Вопросы и ответы",elFaq,ОБР_faq]]]
+  ["Числа и инфографика",[["bignum","Большое число",elBigNum,ОБР_bignum],["facts","Три факта",elFacts,ОБР_facts],["statcard","Показатель с трендом",elStatCard,ОБР_statcard],["ring","Кольцо прогресса",elRing,ОБР_ring],["icons","Четыре преимущества",elIcons,ОБР_icons],["quote","Цитата с цифрами",elQuote,ОБР_quote],["before","До и после",elBefore,ОБР_before]]],
+  ["Переходные слайды",[["divider","Разделитель раздела",elDivider,ОБР_divider],["chapter","Открытие главы",elChapter,ОБР_chapter],["thanks","Финальный слайд",elThanks,ОБР_thanks],["agenda","Содержание",elAgenda,ОБР_agenda],["speaker","Профиль спикера",elSpeaker,ОБР_speaker],["faq","Вопросы и ответы",elFaq,ОБР_faq]]]
 ];
 export { CATS };
