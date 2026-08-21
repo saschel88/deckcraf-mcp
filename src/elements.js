@@ -922,9 +922,23 @@ function elJourney(s,дан){
   // mood — число 1–5 (договор), задаёт высоту точки; за границами не уходит с карточки
   const ST2=ряды(дан&&дан.stages,ОБР_journey.stages,6)
     .map(ст=>[String(ст.label==null?'':ст.label),Math.max(1,Math.min(5,Number(ст.mood)||0))]);
-  const ox=x+28,pw=w-56,base=y+h-34,unit=15;
+  const ox=x+28,pw=w-56,unit=15;
   // точки всегда занимают всю ширину области (0.14–0.86), шаг зависит от числа стадий
   const шаг=ST2.length>1?pw/(ST2.length-1):0;
+  const [подп,пfs]=ужатьНабор(ST2.map(ст=>t(s,ст[0])),шаг-6,8.5,6.5);
+  // подписи стоят в общем ряду под кривой; при mood=1 точка садится прямо на base
+  // и радиус маркера подъедает зазор до нормы (retro и line рисуют маркер r=5,
+  // остальные r=5.5) — отступ ряда подписей растёт настолько, насколько нужно
+  // худшей точке, а не берётся константой; на любом mood от 2 и выше (весь образец)
+  // счёт даёт те же 15px, что и раньше, — байты не сдвигаются
+  const rPt=(s.mode==='retro'||s.mode==='line')?5:5.5;
+  const худшийMood=Math.min(...ST2.map(([,e])=>e));
+  const отступПодп=Math.max(15,rPt-(худшийMood-1)*unit+10+пfs*0.72);
+  // выросший отступ подписи может упереться в нижнюю кромку карточки — тогда
+  // base (нулевая линия кривой) поднимается ровно настолько, чтобы подпись
+  // снова умещалась перед НИЗ=16px запасом; при обычных данных это условие
+  // слабее исходного y+h-34, поэтому база остаётся прежней
+  const base=Math.min(y+h-34,(H-PAD)-НИЗ-отступПодп-пfs*0.22);
   const pts=ST2.map(([,e],i)=>[+(ox+i*шаг).toFixed(1),+(base-(e-1)*unit).toFixed(1)]);
   const gl=s.glow?` filter="${s.glow}"`:'';
   let d;
@@ -933,13 +947,12 @@ function elJourney(s,дан){
   else d='M '+pts.map(p=>p.join(' ')).join(' L ');
   o+=`<line x1="${ox}" y1="${base}" x2="${ox+pw}" y2="${base}" stroke="${s.ln}" stroke-width="1"/>`;
   o+=`<path d="${d}" fill="none" stroke="${s.ac}" stroke-width="${s.mode==='brutal'?3.5:s.mode==='clay'?4:2}" stroke-linejoin="round" stroke-linecap="round"${gl}/>`;
-  const [подп,пfs]=ужатьНабор(ST2.map(ст=>t(s,ст[0])),шаг-6,8.5,6.5);
   pts.forEach((p,i)=>{
     const good=ST2[i][1]>=4, c=good?s.pos:ST2[i][1]<=2?s.ac2:s.ac;
     if(s.mode==='retro')     o+=`<rect x="${p[0]-5}" y="${p[1]-5}" width="10" height="10" fill="${c}"/>`;
     else if(s.mode==='line') o+=`<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="${s.bg}" stroke="${c}" stroke-width="1.6"/>`;
     else o+=`<circle cx="${p[0]}" cy="${p[1]}" r="5.5" fill="${c}"${gl}/>`;
-    o+=txt(s,p[0],base+15,подп[i],пfs,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
+    o+=txt(s,p[0],base+отступПодп,подп[i],пfs,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
   });
   return wrapSvg(s,o);
 }
