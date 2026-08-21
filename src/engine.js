@@ -352,7 +352,7 @@ function chip(s,x,y,label){
     case 'duotone':return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="#fff" fill-opacity=".2"/>`+T('#fff');
     case 'retro':{ // дельта шкалой блоков вместо текста
       let o='';for(let i=0;i<5;i++)o+=`<rect x="${x+i*12}" y="${y+4}" width="9" height="17" fill="${i<4?s.pos:'#2a5c40'}"/>`;
-      return o+txt(s,x+66,ty,'+23%',12.5,700,s.pos,null);}
+      return o+txt(s,x+66,ty,label,12.5,700,s.pos,null);}
     case 'iso':    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${s.pos}" fill-opacity=".2"/>`+T(s.pos);
     default:       return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="${s.pos}" fill-opacity=".16"/>`+T(s.pos);
   }
