@@ -46,13 +46,21 @@ const строка = (д, образец) => (д === undefined || д === null ||
 /* ══════ Диаграммы и данные ══════ */
 
 // 1 ── KPI карточка
-function elKpi(s){
+const ОБР_kpi={label:'Выручка',value:'₸2.4B',delta:'▲ 23% г/г'};
+function elKpi(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   const iso=s.mode==='iso',cx=x+22,base=iso?y+34:y+22;
   let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
-  o+=txt(s,cx,base+22,t(s,'Выручка'),13,s.wl,s.ts,s.ls);
-  o+=txt(s,cx,base+76,'₸2.4B',38,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-1);
-  o+=chip(s,cx,base+92,'▲ 23% г/г');
+  const bw=x+w-cx-22;                       // до правого края карточки, отступ зеркален левому (22)
+  // плашка chip() фиксированной ширины 98, текст в ней с отступом 13 от каждого края (engine.js)
+  const bч=98-13*2;
+  const label=строка(дан&&дан.label,ОБР_kpi.label);
+  const value=строка(дан&&дан.value,ОБР_kpi.value);
+  const delta=строка(дан&&дан.delta,ОБР_kpi.delta);
+  o+=txt(s,cx,base+22,t(s,ужать(label,bw,13)[0]),13,s.wl,s.ts,s.ls);
+  // value кладётся крупным кеглем и вылезает за карточку первым
+  o+=txt(s,cx,base+76,ужать(value,bw,38)[0],38,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-1);
+  o+=chip(s,cx,base+92,ужать(delta,bч,12.5,12.5)[0]);
   return wrapSvg(s,o);
 }
 
@@ -185,16 +193,20 @@ function elRadar(s){
 }
 
 // 6 ── Спидометр
-function elGauge(s){
+const ОБР_gauge={title:'Готовность',value:73,caption:'план на квартал'};
+function elGauge(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2,iso=s.mode==='iso';
   let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
-  const cx=x+w/2,cy=y+h-46,R=52,V=73;
+  const cx=x+w/2,cy=y+h-46,R=52;
+  // договор задаёт границы 0–100 — за них стрелка не выходит
+  const V=Math.max(0,Math.min(100,дан&&дан.value!=null&&!Number.isNaN(Number(дан.value))?Number(дан.value):ОБР_gauge.value));
   const SW=s.mode==='line'?2.5:s.mode==='clay'?20:s.mode==='retro'?0:15;
   const L=Math.PI*R;
   const arc=`M ${cx-R} ${cy} A ${R} ${R} 0 0 1 ${cx+R} ${cy}`;
   const cap=s.mode==='clay'?'round':'butt';
   const gl=s.glow?` filter="${s.glow}"`:'';
-  o+=txt(s,x+20,y+24,t(s,'Готовность'),12,s.wl,s.ts,s.ls);
+  const заг=строка(дан&&дан.title,ОБР_gauge.title);
+  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
   if(s.mode==='retro'){ // дуга набрана отдельными сегментами
     const N=16;
     for(let i=0;i<N;i++){const a=Math.PI*(1-i/(N-1));
@@ -210,7 +222,8 @@ function elGauge(s){
       o+=`<path d="${ir}" fill="none" stroke="${s.hard}" stroke-width="2"/>`;}
   }
   o+=txt(s,cx,cy-8,V+'%',26,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-.5).replace('<text ','<text text-anchor="middle" ');
-  o+=txt(s,cx,cy+20,t(s,'план на квартал'),10,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
+  const подпись=строка(дан&&дан.caption,ОБР_gauge.caption);
+  o+=txt(s,cx,cy+20,t(s,ужать(подпись,w-40,10)[0]),10,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
   return wrapSvg(s,o);
 }
 
@@ -1274,15 +1287,21 @@ function elLayers(s,дан){
 /* ══════ Числа и инфографика ══════ */
 
 // 1 ── Большое число
-function elBigNum(s){
+const ОБР_bignum={eyebrow:'удовлетворённость',value:'87%',caption:'клиентов рекомендуют',delta:'▲ 12 пунктов за год'};
+function elBigNum(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
   const cx=x+w/2;
-  o+=txt(s,cx,y+34,t(s,'удовлетворённость'),9.5,s.wl,s.tm,2.2).replace('<text ','<text text-anchor="middle" ');
-  o+=txt(s,cx,y+88,'87%',52,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-2).replace('<text ','<text text-anchor="middle" ');
+  const maxW=w-40;                          // симметричный отступ 20px от каждого края карточки
+  const eyebrow=строка(дан&&дан.eyebrow,ОБР_bignum.eyebrow);
+  const value=строка(дан&&дан.value,ОБР_bignum.value);
+  const caption=строка(дан&&дан.caption,ОБР_bignum.caption);
+  const delta=строка(дан&&дан.delta,ОБР_bignum.delta);
+  o+=txt(s,cx,y+34,t(s,ужать(eyebrow,maxW,9.5)[0]),9.5,s.wl,s.tm,2.2).replace('<text ','<text text-anchor="middle" ');
+  o+=txt(s,cx,y+88,ужать(value,maxW,52)[0],52,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-2).replace('<text ','<text text-anchor="middle" ');
   o+=`<line x1="${cx-34}" y1="${y+100}" x2="${cx+34}" y2="${y+100}" stroke="${s.ac}" stroke-width="${s.mode==='brutal'?3:2}"/>`;
-  o+=txt(s,cx,y+120,t(s,'клиентов рекомендуют'),11,s.wl,s.ts,null).replace('<text ','<text text-anchor="middle" ');
-  o+=txt(s,cx,y+140,t(s,'▲ 12 пунктов за год'),9.5,600,bgTx(s,s.pos),null).replace('<text ','<text text-anchor="middle" ');
+  o+=txt(s,cx,y+120,t(s,ужать(caption,maxW,11)[0]),11,s.wl,s.ts,null).replace('<text ','<text text-anchor="middle" ');
+  o+=txt(s,cx,y+140,t(s,ужать(delta,maxW,9.5)[0]),9.5,600,bgTx(s,s.pos),null).replace('<text ','<text text-anchor="middle" ');
   return wrapSvg(s,o);
 }
 
@@ -1457,16 +1476,22 @@ function elBefore(s,дан){
 /* ══════ Переходные слайды ══════ */
 
 // 1 ── Разделитель раздела
-function elDivider(s){
+const ОБР_divider={eyebrow:'раздел',num:'02',title:'Цифровая платформа',sub:'архитектура · данные · интеграции'};
+function elDivider(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
   const cx=x+w/2, ac=s.mode==='brutal'?s.ink:bgTx(s,s.ac);
-  o+=txt(s,cx,y+38,t(s,'раздел'),9,600,s.tm,3).replace('<text ','<text text-anchor="middle" ');
+  const maxW=w-40;                          // симметричный отступ 20px от каждого края карточки
+  const eyebrow=строка(дан&&дан.eyebrow,ОБР_divider.eyebrow);
+  const num=строка(дан&&дан.num,ОБР_divider.num);
+  const заг=строка(дан&&дан.title,ОБР_divider.title);
+  const sub=строка(дан&&дан.sub,ОБР_divider.sub);
+  o+=txt(s,cx,y+38,t(s,ужать(eyebrow,maxW,9)[0]),9,600,s.tm,3).replace('<text ','<text text-anchor="middle" ');
   // номер — самостоятельный элемент, а не подложка: поверх него ничего не ставим
-  o+=txt(s,cx,y+80,'02',44,s.wv,ac,-1.5).replace('<text ','<text text-anchor="middle" ');
-  o+=txt(s,cx,y+110,t(s,'Цифровая платформа'),18,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-.4).replace('<text ','<text text-anchor="middle" ');
+  o+=txt(s,cx,y+80,ужать(num,maxW,44)[0],44,s.wv,ac,-1.5).replace('<text ','<text text-anchor="middle" ');
+  o+=txt(s,cx,y+110,t(s,ужать(заг,maxW,18)[0]),18,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-.4).replace('<text ','<text text-anchor="middle" ');
   o+=`<line x1="${cx-40}" y1="${y+124}" x2="${cx+40}" y2="${y+124}" stroke="${ac}" stroke-width="${s.mode==='brutal'?3:2}"/>`;
-  o+=txt(s,cx,y+144,t(s,'архитектура · данные · интеграции'),9.5,s.wl,s.ts,null).replace('<text ','<text text-anchor="middle" ');
+  o+=txt(s,cx,y+144,t(s,ужать(sub,maxW,9.5)[0]),9.5,s.wl,s.ts,null).replace('<text ','<text text-anchor="middle" ');
   return wrapSvg(s,o);
 }
 
@@ -1485,20 +1510,27 @@ function elChapter(s){
 }
 
 // 3 ── Финальный слайд
-function elThanks(s){
+const ОБР_thanks={title:'Спасибо',name:'Алексей Шестак',org:'Bolashak Engineering',contact:'+7 705 588 55 66'};
+function elThanks(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
   const cx=x+w/2;
-  o+=txt(s,cx,y+62,t(s,'Спасибо'),34,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-1).replace('<text ','<text text-anchor="middle" ');
+  const maxW=w-40;                          // симметричный отступ 20px от каждого края карточки
+  const заг=строка(дан&&дан.title,ОБР_thanks.title);
+  const имя=строка(дан&&дан.name,ОБР_thanks.name);
+  const орг=строка(дан&&дан.org,ОБР_thanks.org);
+  const контакт=строка(дан&&дан.contact,ОБР_thanks.contact);
+  o+=txt(s,cx,y+62,t(s,ужать(заг,maxW,34)[0]),34,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-1).replace('<text ','<text text-anchor="middle" ');
   o+=`<line x1="${cx-38}" y1="${y+78}" x2="${cx+38}" y2="${y+78}" stroke="${s.ac}" stroke-width="${s.mode==='brutal'?3:2}"/>`;
-  o+=txt(s,cx,y+100,t(s,'Алексей Шестак'),12,600,s.ts,null).replace('<text ','<text text-anchor="middle" ');
-  o+=txt(s,cx,y+116,t(s,'Bolashak Engineering'),9.5,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
+  o+=txt(s,cx,y+100,t(s,ужать(имя,maxW,12)[0]),12,600,s.ts,null).replace('<text ','<text text-anchor="middle" ');
+  o+=txt(s,cx,y+116,t(s,ужать(орг,maxW,9.5)[0]),9.5,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
   const cy2=y+138, bw2=112;
   if(s.mode==='line')      o+=`<rect x="${cx-bw2/2}" y="${cy2-14}" width="${bw2}" height="22" rx="4" fill="none" stroke="${s.ac}" stroke-width="1.3"/>`;
   else if(s.mode==='brutal')o+=`<rect x="${cx-bw2/2}" y="${cy2-14}" width="${bw2}" height="22" fill="${s.ink}"/>`;
   else o+=`<rect x="${cx-bw2/2}" y="${cy2-14}" width="${bw2}" height="22" rx="${s.mode==='clay'?11:5}" fill="${s.ac}" fill-opacity="${s.mode==='neon'?.16:s.mode==='glass'||s.mode==='aurora'?.4:.16}"${s.mode==='neon'?` stroke="${s.ac}" stroke-width="1.2"`:''}/>`;
   const cc=s.mode==='brutal'?'#fff':bgTx(s,s.ac);
-  o+=txt(s,cx,cy2-1,'+7 705 588 55 66',9.5,600,cc,null).replace('<text ','<text text-anchor="middle" ');
+  // плашка фиксированной ширины 112, симметричный отступ 13 от каждого края — как у chip() в engine.js
+  o+=txt(s,cx,cy2-1,ужать(контакт,bw2-13*2,9.5,9.5)[0],9.5,600,cc,null).replace('<text ','<text text-anchor="middle" ');
   return wrapSvg(s,o);
 }
 
@@ -1527,7 +1559,9 @@ function elAgenda(s,дан){
 }
 
 // 5 ── Профиль спикера
-function elSpeaker(s){
+const ОБР_speaker={initials:'АШ',name:'Алексей Шестак',role:'Senior Systems Analyst',org:'Bolashak Engineering',
+  line1:'TOGAF 9 · IPMA · 10 лет в ИТ',line2:'Астана, Казахстан'};
+function elSpeaker(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
   const ax=x+56, ay=y+h/2-4, r=32;
@@ -1539,14 +1573,21 @@ function elSpeaker(s){
   else{o+=`<circle cx="${ax}" cy="${ay}" r="${r}" fill="${s.ac}" fill-opacity="${s.mode==='glass'||s.mode==='aurora'?.5:1}"/>`;
     if(s.mode==='clay')o+=`<ellipse cx="${ax}" cy="${ay-12}" rx="14" ry="7" fill="${s.hi}" fill-opacity=".3"/>`;}
   const ic=(s.mode==='line'||s.mode==='neon')?s.ac:s.mode==='brutal'?'#000':nodeTx(s,s.ac);
-  o+=txt(s,ax,ay+7,'АШ',19,s.wv,ic,null).replace('<text ','<text text-anchor="middle" ');
-  const lx=ax+r+22;
-  o+=txt(s,lx,y+50,t(s,'Алексей Шестак'),14,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-.2);
-  o+=txt(s,lx,y+68,t(s,'Senior Systems Analyst'),10,600,bgTx(s,s.ac),null);
-  o+=txt(s,lx,y+84,t(s,'Bolashak Engineering'),9.5,s.wl,s.tm,null);
+  // кружок фиксированного размера — крупнее двух знаков не влезет, кегль не ужимаем, а режем
+  const initials=строка(дан&&дан.initials,ОБР_speaker.initials).slice(0,2);
+  o+=txt(s,ax,ay+7,initials,19,s.wv,ic,null).replace('<text ','<text text-anchor="middle" ');
+  const lx=ax+r+22, maxW=x+w-22-lx;
+  const имя=строка(дан&&дан.name,ОБР_speaker.name);
+  const роль=строка(дан&&дан.role,ОБР_speaker.role);
+  const орг=строка(дан&&дан.org,ОБР_speaker.org);
+  const стр1=строка(дан&&дан.line1,ОБР_speaker.line1);
+  const стр2=строка(дан&&дан.line2,ОБР_speaker.line2);
+  o+=txt(s,lx,y+50,t(s,ужать(имя,maxW,14)[0]),14,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-.2);
+  o+=txt(s,lx,y+68,t(s,ужать(роль,maxW,10)[0]),10,600,bgTx(s,s.ac),null);
+  o+=txt(s,lx,y+84,t(s,ужать(орг,maxW,9.5)[0]),9.5,s.wl,s.tm,null);
   o+=`<line x1="${lx}" y1="${y+98}" x2="${x+w-22}" y2="${y+98}" stroke="${s.ln}" stroke-width="1"/>`;
-  o+=txt(s,lx,y+118,t(s,'TOGAF 9 · IPMA · 10 лет в ИТ'),9,s.wl,s.ts,null);
-  o+=txt(s,lx,y+136,t(s,'Астана, Казахстан'),9,s.wl,s.tm,null);
+  o+=txt(s,lx,y+118,t(s,ужать(стр1,maxW,9)[0]),9,s.wl,s.ts,null);
+  o+=txt(s,lx,y+136,t(s,ужать(стр2,maxW,9)[0]),9,s.wl,s.tm,null);
   return wrapSvg(s,o);
 }
 
@@ -1594,12 +1635,12 @@ function elFaq(s,дан){
 
 
 const CATS=[
-  ["Диаграммы и данные",[["kpi","KPI-карточка",elKpi],["bars","Прогресс-бары",elBars,ОБР_bars],["column","Столбчатый график",elColumn],["donut","Кольцевая диаграмма",elDonut,ОБР_donut],["radar","Радар",elRadar],["gauge","Спидометр",elGauge],["area","Area chart",elArea],["wf","Waterfall",elWaterfall],["heat","Heatmap",elHeat,ОБР_heat],["tree","Treemap",elTree],["scat","Scatter",elScatter,ОБР_scat],["spark","Sparklines",elSpark],["bub","Bubble",elBubble],["dumb","Dumbbell",elDumb]]],
+  ["Диаграммы и данные",[["kpi","KPI-карточка",elKpi,ОБР_kpi],["bars","Прогресс-бары",elBars,ОБР_bars],["column","Столбчатый график",elColumn],["donut","Кольцевая диаграмма",elDonut,ОБР_donut],["radar","Радар",elRadar],["gauge","Спидометр",elGauge,ОБР_gauge],["area","Area chart",elArea],["wf","Waterfall",elWaterfall],["heat","Heatmap",elHeat,ОБР_heat],["tree","Treemap",elTree],["scat","Scatter",elScatter,ОБР_scat],["spark","Sparklines",elSpark],["bub","Bubble",elBubble],["dumb","Dumbbell",elDumb]]],
   ["Шаги и процессы",[["arrows","Стрелки-шаги",elArrows,ОБР_arrows],["funnel","Воронка",elFunnel,ОБР_funnel],["timeline","Таймлайн",elTimeline,ОБР_timeline,ОГ_timeline],["cycle","Цикл PDCA",elCycle,ОБР_cycle],["roadmap","Дорожная карта",elRoadmap,ОБР_roadmap],["swim","Swimlane",elSwim,ОБР_swim],["dtree","Дерево решений",elTree2],["loop","Бесконечный цикл",elLoop,ОБР_loop],["journey","Путь клиента",elJourney],["tcards","Таймлайн карточками",elTCards,ОБР_tcards]]],
   ["Матрицы и пирамиды",[["pyramid","Пирамида",elPyramid],["swot","SWOT",elSwot,ОБР_swot],["m22","Матрица 2×2",elM22,ОБР_m22],["venn","Диаграмма Венна",elVenn],["fmatrix","Таблица сравнения",elFMatrix,ОБР_fmatrix]]],
   ["AI и нейросети",[["net","Нейронная сеть",elNet,ОБР_net],["trans","Блок трансформера",elTrans],["rag","Конвейер RAG",elRag,ОБР_rag],["llm","Сравнение моделей",elLLM,ОБР_llm],["vec","Векторное пространство",elVec]]],
   ["Архитектура и интеграции",[["micro","Микросервисы",elMicro,ОБР_micro],["cicd","Конвейер CI/CD",elCicd,ОБР_cicd],["egov","Межведомственный шлюз",elEgov,ОБР_egov],["bus","Событийная шина",elBus,ОБР_bus],["layers","Слои системы",elLayers,ОБР_layers]]],
-  ["Числа и инфографика",[["bignum","Большое число",elBigNum],["facts","Три факта",elFacts,ОБР_facts],["statcard","Показатель с трендом",elStatCard],["ring","Кольцо прогресса",elRing],["icons","Четыре преимущества",elIcons,ОБР_icons],["quote","Цитата с цифрами",elQuote,ОБР_quote],["before","До и после",elBefore,ОБР_before]]],
-  ["Переходные слайды",[["divider","Разделитель раздела",elDivider],["chapter","Открытие главы",elChapter],["thanks","Финальный слайд",elThanks],["agenda","Содержание",elAgenda,ОБР_agenda],["speaker","Профиль спикера",elSpeaker],["faq","Вопросы и ответы",elFaq,ОБР_faq]]]
+  ["Числа и инфографика",[["bignum","Большое число",elBigNum,ОБР_bignum],["facts","Три факта",elFacts,ОБР_facts],["statcard","Показатель с трендом",elStatCard],["ring","Кольцо прогресса",elRing],["icons","Четыре преимущества",elIcons,ОБР_icons],["quote","Цитата с цифрами",elQuote,ОБР_quote],["before","До и после",elBefore,ОБР_before]]],
+  ["Переходные слайды",[["divider","Разделитель раздела",elDivider,ОБР_divider],["chapter","Открытие главы",elChapter],["thanks","Финальный слайд",elThanks,ОБР_thanks],["agenda","Содержание",elAgenda,ОБР_agenda],["speaker","Профиль спикера",elSpeaker,ОБР_speaker],["faq","Вопросы и ответы",elFaq,ОБР_faq]]]
 ];
 export { CATS };
