@@ -1197,7 +1197,7 @@ function elNet(s,дан){
 // 2 ── Блок трансформера
 const ОБР_trans={title:'Блок трансформера',
   rows:['Add & Norm','Feed Forward','Add & Norm','Multi-Head Attention','Input Embedding'],
-  повторы:'×12'};
+  repeats:'×12'};
 function elTrans(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2,iso=s.mode==='iso';
   let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
@@ -1243,7 +1243,7 @@ function elTrans(s,дан){
   // справа от скобки до внутреннего края карточки геометрически ровно 20px
   // (36 отступа под блок скобки минус 13 до скобки минус 3 отступа текста) — на всех стилях одинаково
   const прав=x+(iso?w-s.dx:w);
-  const [повТ,повFs]=ужать(строка(дан&&дан.повторы,ОБР_trans.повторы),прав-(brx+3),9,6.5);
+  const [повТ,повFs]=ужать(строка(дан&&дан.repeats,ОБР_trans.repeats),прав-(brx+3),9,6.5);
   o+=txt(s,brx+3,(y0+y1)/2+3,повТ,повFs,700,s.mode==='brutal'?s.ink:bgTx(s,s.ac),null);
   return wrapSvg(s,o);
 }
