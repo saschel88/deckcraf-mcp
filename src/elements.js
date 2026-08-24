@@ -601,8 +601,12 @@ function elBubble(s,дан){
   const [згТ,згFs]=ужать(заг,w-40,12,9);
   o+=txt(s,x+20,y+24,t(s,згТ),згFs,s.wl,s.ts,s.ls);
   // цвета не входят в договор, берутся из стиля по кругу; исходный образец
-  // раскрашен вручную (ac, ac3, ac2, pos, ac3, ac2) — палитра ниже воспроизводит его дословно
-  const пал=[s.ac,s.ac3,s.ac2,s.pos,s.ac3,s.ac2,s.tm];
+  // раскрашен вручную (ac, ac3, ac2, pos, ac3, ac2) — первые шесть палитра
+  // ниже воспроизводит дословно; договор допускает семь пузырей (4–7), а
+  // седьмой получал tm — приглушённый текстовый цвет, читается как
+  // «неактивный»/«прочее», хотя это просто ещё одна категория; заменён
+  // на pos — реальный акцент, ещё не использованный дважды
+  const пал=[s.ac,s.ac3,s.ac2,s.pos,s.ac3,s.ac2,s.pos];
   // радиус — из договора границы 8–30, x/y — доли области построения 0–100 (как у scat) — тоже зажаты
   const B=ряды(дан&&дан.bubbles,ОБР_bub.bubbles,7).map((б,i)=>[
     String(б.label==null?'':б.label),
@@ -679,7 +683,10 @@ function elArrows(s,дан){
   const заг=строка(дан&&дан.title,ОБР_arrows.title);
   const [згТ,згFs]=ужать(заг,w-40,12,9);
   o+=txt(s,x+20,y+26,t(s,згТ),згFs,s.wl,s.ts,s.ls);
-  const пал=[s.ac,s.ac3,s.ac2,s.pos,s.tm];
+  // договор допускает 5 шагов, а пятый шеврон получал tm (приглушённый
+  // текстовый цвет вместо категориального) — читается как «прочее»,
+  // хотя это обычный пятый шаг; заменён на повтор ac
+  const пал=[s.ac,s.ac3,s.ac2,s.pos,s.ac];
   const шаги=ряды(дан&&дан.steps,ОБР_arrows.steps,5);
   const L=шаги.map((ш,i)=>[String(ш.n==null?String(i+1).padStart(2,'0'):ш.n),String(ш.label==null?'':ш.label),пал[i%пал.length]]);
   const aw=(w-46-(iso?s.dx:0))/L.length, ah=44, ay=y+h/2-6;
@@ -821,7 +828,10 @@ const ОБР_roadmap={title:'Дорожная карта',rows:[{label:'Иссл
       {label:'Разработка',start:.4,len:.44},{label:'Внедрение',start:.72,len:.28}],cols:['Q1','Q2','Q3','Q4']};
 function elRoadmap(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2;
-  const пал=[s.ac,s.ac3,s.ac2,s.pos,s.tm];
+  // договор допускает 5 рядов, а пятая полоса получала tm (приглушённый
+  // текстовый цвет) — читается как «неактивная», хотя это обычный
+  // пятый ряд; заменён на повтор ac
+  const пал=[s.ac,s.ac3,s.ac2,s.pos,s.ac];
   const R=ряды(дан&&дан.rows,ОБР_roadmap.rows,5)
     .map((р,i)=>[String(р.label==null?'':р.label),Math.max(0,Math.min(1,Number(р.start)||0)),
       Math.max(.04,Math.min(1,Number(р.len)||0)),пал[i%пал.length]]);
@@ -1066,7 +1076,10 @@ function elPyramid(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,iso=s.mode==='iso';
   const заг=строка(дан&&дан.title,ОБР_pyramid.title);
   const уровниДан=ряды(дан&&дан.levels,ОБР_pyramid.levels,5);
-  const пал=[s.ac,s.ac2,s.ac3,s.pos,s.tm];
+  // договор допускает 5 ярусов, а пятый получал tm (приглушённый текстовый
+  // цвет) — читается как «прочее», хотя это обычный пятый ярус; заменён
+  // на повтор ac
+  const пал=[s.ac,s.ac2,s.ac3,s.pos,s.ac];
   const L=уровниДан.map((у,i)=>[String(у.label==null?'':у.label),пал[i%пал.length]]);
   const N=L.length;
   const cx=x+w/2-(iso?s.dx/2:0);
@@ -1384,7 +1397,10 @@ const ОБР_llm={title:'Сравнение моделей',models:[{name:'Claud
       {name:'Gemini',params:'~540B',score:89},{name:'Llama 3',params:'70B',score:82}]};
 function elLLM(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2;
-  const пал=[s.ac,s.ac3,s.ac2,s.pos,s.tm];
+  // договор допускает 5 моделей, а пятая полоса получала tm (приглушённый
+  // текстовый цвет) — читается как «прочая», хотя это обычная пятая
+  // модель; заменён на повтор ac
+  const пал=[s.ac,s.ac3,s.ac2,s.pos,s.ac];
   const M=ряды(дан&&дан.models,ОБР_llm.models,5)
     .map((м,i)=>[String(м.name==null?'':м.name),String(м.params==null?'':м.params),
       Math.max(0,Math.min(100,Number(м.score)||0)),пал[i%пал.length]]);
