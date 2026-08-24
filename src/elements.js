@@ -27,10 +27,30 @@ function ужать(str, maxW, fs, minFs) {
   return [о + '…', f];
 }
 
+/* Как ужать(), но без многоточия. Для очень узких полей вроде heat.rows,
+   где сам предел — считаные знаки: многоточие там съедает треть и без того
+   тесного бюджета символом, который ничего не значит, а «не…» вдобавок
+   выглядит осмысленным словом — обрезка без точки честнее: «нед» не
+   притворяется целым, но хотя бы не выдумывает лишнего. */
+function ужатьБезТочек(str, maxW, fs, minFs) {
+  str = String(str ?? ''); minFs = minFs || fs * 0.72;
+  let f = fs;
+  while (мера(str, f) > maxW && f > minFs) f -= 0.5;
+  if (мера(str, f) <= maxW) return [str, f];
+  let о = str;
+  while (о.length > 1 && мера(о, f) > maxW) о = о.slice(0, -1);
+  return [о, f];
+}
+
 /* Общий кегль на набор строк — чтобы подписи в ряду не разъезжались по размеру */
 function ужатьНабор(список, maxW, fs, minFs) {
   const f = список.reduce((м, с) => Math.min(м, ужать(с, maxW, fs, minFs)[1]), fs);
   return [список.map(с => ужать(с, maxW, f, f)[0]), f];
+}
+
+function ужатьНаборБезТочек(список, maxW, fs, minFs) {
+  const f = список.reduce((м, с) => Math.min(м, ужатьБезТочек(с, maxW, fs, minFs)[1]), fs);
+  return [список.map(с => ужатьБезТочек(с, maxW, f, f)[0]), f];
 }
 
 /* Нижний отступ из spec/rules.json: не менее 16px от визуального низа
@@ -402,7 +422,9 @@ function elHeat(s,дан){
   const cw=Math.min(40,((x+w-14)-ox-(нc-1)*g)/нc),ch=Math.min(20,(h-34-22-(нr-1)*g)/нr);
   const макс=Math.max(...M.flat(),1);               // интенсивность считается от максимума
   const [days,daysFs]=ужатьНабор(ряды(дан&&дан.cols,ОБР_heat.cols,нc).map(String),cw,9,7);
-  const [wks,wksFs]=ужатьНабор(ряды(дан&&дан.rows,ОБР_heat.rows,нr).map(String),ox-x-24,9,7);
+  // без точки: договорный предел — 3 знака, многоточие там убивает
+  // единственное, чем подписи вроде «нед1»…«нед4» отличаются друг от друга
+  const [wks,wksFs]=ужатьНаборБезТочек(ряды(дан&&дан.rows,ОБР_heat.rows,нr).map(String),ox-x-24,9,7);
   M.forEach((row,r)=>row.forEach((v,c)=>{
     const cx=ox+c*(cw+g),cy=oy+r*(ch+g),k=v/макс;
     let cf=null;                                   // фактическая заливка ячейки — от неё считаем подпись
