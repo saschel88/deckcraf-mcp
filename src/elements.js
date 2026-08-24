@@ -89,7 +89,7 @@ function elKpi(s,дан){
 // 2 ── Прогресс-бары
 const ОБР_bars={rows:[{label:'Внедрение',v:78},{label:'Автоматизация',v:55},{label:'Оцифровка',v:91}]};
 function elBars(s,дан){
-  const пал=[s.ac,s.ac3,s.ac2,s.pos,s.tm];
+  const пал=[s.ac,s.ac3,s.ac2,s.pos,s.ac];
   const rows=ряды(дан&&дан.rows,ОБР_bars.rows,5);
   const заг=дан&&дан.title?String(дан.title):null;
   const x=PAD,y=PAD,w=W-PAD*2,iso=s.mode==='iso';
@@ -707,7 +707,7 @@ const ОБР_funnel={title:'Путь сделки',levels:[{label:'Лиды',val
      {label:'Оффер',value:'720',k:.52},{label:'Сделка',value:'310',k:.3}]};
 function elFunnel(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,iso=s.mode==='iso';
-  const пал=[s.ac,s.ac3,s.ac2,s.pos,s.tm];
+  const пал=[s.ac,s.ac3,s.ac2,s.pos,s.ac];
   const ур=ряды(дан&&дан.levels,ОБР_funnel.levels,5);
   const L=ур.map((у,i)=>[String(у.label==null?'':у.label),String(у.value==null?'':у.value),
     Math.max(.08,Math.min(1,Number(у.k)||0)),пал[i%пал.length]]);
@@ -1978,7 +1978,7 @@ const ОБР_agenda={title:'Содержание',items:['Контекст и з
       'Результаты и эффект','Следующие шаги']};
 function elAgenda(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2;
-  const пал=[s.ac,s.ac3,s.ac2,s.pos,s.tm];
+  const пал=[s.ac,s.ac3,s.ac2,s.pos,s.ac];
   const пункты=ряды(дан&&дан.items,ОБР_agenda.items,6).map(String);
   const A=пункты.map((п,i)=>[String(i+1).padStart(2,'0'),п,пал[i%пал.length]]);
   const hh=рост(y+56+(A.length-1)*21+3);   // пунктов больше пяти — холст растёт
