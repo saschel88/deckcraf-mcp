@@ -1369,7 +1369,8 @@ function elLLM(s,дан){
   const h=hh-PAD*2;
   let o=frameH(s,hh)+surface(s,x,y,w,h);
   const заг=строка(дан&&дан.title,ОБР_llm.title);
-  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  const [згТ,згFs]=ужать(заг,w-40,12,9);
+  o+=txt(s,x+20,y+24,t(s,згТ),згFs,s.wl,s.ts,s.ls);
   M.forEach(([n2,p,v,c],i)=>{
     const ry=top+i*rh;
     o+=txt(s,lx,ry+11,имена[i],иfs,i===0?700:s.wl,i===0?bgTx(s,c):s.ts,null);
@@ -1393,7 +1394,8 @@ function elVec(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2,iso=s.mode==='iso';
   let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
   const заг=строка(дан&&дан.title,ОБР_vec.title);
-  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  const [згТ,згFs]=ужать(заг,w-40,12,9);
+  o+=txt(s,x+20,y+24,t(s,згТ),згFs,s.wl,s.ts,s.ls);
   const gl=s.glow?` filter="${s.glow}"`:'';
   const dx=iso?-s.dx/2:0;
   // три плотных кластера, координаты заданы явно — формула давала россыпь
@@ -1430,14 +1432,17 @@ function elVec(s,дан){
     if(i<2){
       const minOy=Math.min(...cl.p.map(p=>p[1]));
       const budget=Math.max(24,2*Math.min(cl.cx-x,x+w-cl.cx)-8);
-      o+=txt(s,cl.cx,cl.cy+minOy-9,ужать(t(s,l),budget,9,7)[0],9,600,s.tm,null).replace('<text ','<text text-anchor="middle" ');
+      const [клТ,клFs]=ужать(t(s,l),budget,9,7);
+      o+=txt(s,cl.cx,cl.cy+minOy-9,клТ,клFs,600,s.tm,null).replace('<text ','<text text-anchor="middle" ');
     }else{
       const lx=Q.cx+R+10, budget=Math.max(24,(x+w-20)-lx);
-      o+=txt(s,lx,Q.cy+4,ужать(t(s,l),budget,9,7)[0],9,600,s.tm,null).replace('<text ','<text text-anchor="start" ');
+      const [клТ,клFs]=ужать(t(s,l),budget,9,7);
+      o+=txt(s,lx,Q.cy+4,клТ,клFs,600,s.tm,null).replace('<text ','<text text-anchor="start" ');
     }
   });
   const прим=строка(дан&&дан.note,ОБР_vec.note);
-  o+=txt(s,x+20,y+h-18,t(s,ужать(прим,w-40,8,6.5)[0]),8,s.wl,s.tm,null);
+  const [примТ,примFs]=ужать(прим,w-40,8,6.5);
+  o+=txt(s,x+20,y+h-18,t(s,примТ),примFs,s.wl,s.tm,null);
   return wrapSvg(s,o);
 }
 
@@ -1450,7 +1455,8 @@ function elMicro(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
   const заг=строка(дан&&дан.title,ОБР_micro.title);
-  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  const [згТ,згFs]=ужать(заг,w-40,12,9);
+  o+=txt(s,x+20,y+24,t(s,згТ),згFs,s.wl,s.ts,s.ls);
   const gw=110, gx=x+w/2-gw/2, gy=y+32, bh=21;
   const цвS=[s.ac3,s.ac2,s.pos];
   const обрS=ОБР_micro.services.map((о,i)=>[о.label,цвS[i]]);
@@ -1490,7 +1496,8 @@ function elCicd(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
   const заг=строка(дан&&дан.title,ОБР_cicd.title);
-  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  const [згТ,згFs]=ужать(заг,w-40,12,9);
+  o+=txt(s,x+20,y+24,t(s,згТ),згFs,s.wl,s.ts,s.ls);
   const пал=[s.ac3,s.ac,s.ac2,s.pos,s.tm];
   const P=ряды(дан&&дан.stages,ОБР_cicd.stages,5)
     .map((э,i)=>[String(э.label==null?'':э.label),пал[i%пал.length],э.done?1:0]);
@@ -1510,7 +1517,8 @@ function elCicd(s,дан){
   o+=track(s,x+26,py,pw,7);
   o+=shape(s,x+26,py,pw*прог,7,s.pos,1);
   const прим=строка(дан&&дан.note,ОБР_cicd.note);
-  o+=txt(s,x+26,py+24,t(s,ужать(прим,pw,8.5,7)[0]),8.5,s.wl,s.tm,null);
+  const [примТ,примFs]=ужать(прим,pw,8.5,7);
+  o+=txt(s,x+26,py+24,t(s,примТ),примFs,s.wl,s.tm,null);
   return wrapSvg(s,o);
 }
 
@@ -1522,7 +1530,8 @@ function elEgov(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
   const заг=строка(дан&&дан.title,ОБР_egov.title);
-  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  const [згТ,згFs]=ужать(заг,w-40,12,9);
+  o+=txt(s,x+20,y+24,t(s,згТ),згFs,s.wl,s.ts,s.ls);
   const cw=88, cx=x+w/2, top=y+34, bh=19;
   const [акт,аfs]=ужать(строка(дан&&дан.actor,ОБР_egov.actor),cw-8,8.5,6.5);
   o+=node(s,cx-cw/2,top,cw,bh,s.ac3,акт,аfs);
@@ -1542,7 +1551,8 @@ function elEgov(s,дан){
     o+=node(s,mx,my,mw,bh,c,ярлM2[i],яfsM2);
   });
   const прим=строка(дан&&дан.note,ОБР_egov.note);
-  o+=txt(s,x+20,y+h-18,t(s,ужать(прим,w-40,7.5,6.5)[0]),7.5,s.wl,s.tm,null);
+  const [примТ,примFs]=ужать(прим,w-40,7.5,6.5);
+  o+=txt(s,x+20,y+h-18,t(s,примТ),примFs,s.wl,s.tm,null);
   return wrapSvg(s,o);
 }
 
@@ -1554,7 +1564,8 @@ function elBus(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
   const заг=строка(дан&&дан.title,ОБР_bus.title);
-  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  const [згТ,згFs]=ужать(заг,w-40,12,9);
+  o+=txt(s,x+20,y+24,t(s,згТ),згFs,s.wl,s.ts,s.ls);
   const bw=(w-52)/3-8, byTop=y+42, byBot=y+h-58, bh=20;
   const busY=y+h/2+2, busH=s.mode==='clay'?18:14;
   // источников и подписчиков по три: под них расчерчены обе полки
@@ -1600,7 +1611,8 @@ function elLayers(s,дан){
   const h=hh-PAD*2;
   let o=frameH(s,hh)+surface(s,x,y,w,h);
   const заг=строка(дан&&дан.title,ОБР_layers.title);
-  o+=txt(s,x+20,y+22,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  const [згТ,згFs]=ужать(заг,w-40,12,9);
+  o+=txt(s,x+20,y+22,t(s,згТ),згFs,s.wl,s.ts,s.ls);
   // имя слоя и стек делят одну полосу: сперва ужимается стек, он второстепенный
   const [имена,иfs]=ужатьНабор(L.map(п=>t(s,п[0])),bw*.45,9.5,7);
   const [стеки,сfs]=ужатьНабор(L.map(п=>t(s,п[1])),bw*.52,8,6);
@@ -1629,11 +1641,15 @@ function elBigNum(s,дан){
   const value=строка(дан&&дан.value,ОБР_bignum.value);
   const caption=строка(дан&&дан.caption,ОБР_bignum.caption);
   const delta=строка(дан&&дан.delta,ОБР_bignum.delta);
-  o+=txt(s,cx,y+34,t(s,ужать(eyebrow,maxW,9.5)[0]),9.5,s.wl,s.tm,2.2).replace('<text ','<text text-anchor="middle" ');
-  o+=txt(s,cx,y+88,ужать(value,maxW,52)[0],52,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-2).replace('<text ','<text text-anchor="middle" ');
+  const [eyebrowТ,eyebrowFs]=ужать(eyebrow,maxW,9.5);
+  o+=txt(s,cx,y+34,t(s,eyebrowТ),eyebrowFs,s.wl,s.tm,2.2).replace('<text ','<text text-anchor="middle" ');
+  const [valueТ,valueFs]=ужать(value,maxW,52);
+  o+=txt(s,cx,y+88,valueТ,valueFs,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-2).replace('<text ','<text text-anchor="middle" ');
   o+=`<line x1="${cx-34}" y1="${y+100}" x2="${cx+34}" y2="${y+100}" stroke="${s.ac}" stroke-width="${s.mode==='brutal'?3:2}"/>`;
-  o+=txt(s,cx,y+120,t(s,ужать(caption,maxW,11)[0]),11,s.wl,s.ts,null).replace('<text ','<text text-anchor="middle" ');
-  o+=txt(s,cx,y+140,t(s,ужать(delta,maxW,9.5)[0]),9.5,600,bgTx(s,s.pos),null).replace('<text ','<text text-anchor="middle" ');
+  const [captionТ,captionFs]=ужать(caption,maxW,11);
+  o+=txt(s,cx,y+120,t(s,captionТ),captionFs,s.wl,s.ts,null).replace('<text ','<text text-anchor="middle" ');
+  const [deltaТ,deltaFs]=ужать(delta,maxW,9.5);
+  o+=txt(s,cx,y+140,t(s,deltaТ),deltaFs,600,bgTx(s,s.pos),null).replace('<text ','<text text-anchor="middle" ');
   return wrapSvg(s,o);
 }
 
@@ -1644,7 +1660,8 @@ function elFacts(s,дан){
   const x=PAD,y=PAD,w=W-PAD*2,h=H-PAD*2;
   let o=frame(s)+surface(s,x,y,w,h);
   const заг=строка(дан&&дан.title,ОБР_facts.title);
-  o+=txt(s,x+20,y+26,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  const [згТ,згFs]=ужать(заг,w-40,12,9);
+  o+=txt(s,x+20,y+26,t(s,згТ),згFs,s.wl,s.ts,s.ls);
   const пал=[s.ac,s.ac3,s.pos,s.ac2];
   const F=ряды(дан&&дан.facts,ОБР_facts.facts,4)
     .map((ф,i)=>[String(ф.value==null?'':ф.value),String(ф.label==null?'':ф.label),пал[i%пал.length]]);
