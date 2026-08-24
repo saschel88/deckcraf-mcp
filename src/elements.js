@@ -392,8 +392,10 @@ function elHeat(s,дан){
   const заг=строка(дан&&дан.title,ОБР_heat.title);
   const [згТ,згFs]=ужать(заг,w-40,12,9);
   o+=txt(s,x+20,y+24,t(s,згТ),згFs,s.wl,s.ts,s.ls);
+  // договор объявляет значения 1–9: без зажатия одна ячейка сверх нормы
+  // пересчитывает максимум и обесцвечивает всю карту
   const M=(Array.isArray(дан&&дан.matrix)&&дан.matrix.length?дан.matrix:ОБР_heat.matrix)
-    .slice(0,5).map(р=>(Array.isArray(р)?р:[]).slice(0,6).map(v=>Number(v)||0));
+    .slice(0,5).map(р=>(Array.isArray(р)?р:[]).slice(0,6).map(v=>Math.max(1,Math.min(9,Number(v)||0))));
   const нc=Math.max(...M.map(р=>р.length),1),нr=M.length;
   const g=3,ox=x+38,oy=y+34;
   // ячейка ужимается под число столбцов, а не наоборот
@@ -496,8 +498,11 @@ function elScatter(s,дан){
   const [згТ,згFs]=ужать(заг,w-40,12,9);
   o+=txt(s,x+20,y+24,t(s,згТ),згFs,s.wl,s.ts,s.ls);
   const ox=x+26,oy=iso?y+46:y+38,pw=w-52-(iso?s.dx:0),ph=h-74;
+  // договор объявляет x/y границами 0–100 — зажимаем тем же приёмом, что bub,
+  // иначе точка вне холста уходит молча
   const P=ряды(дан&&дан.points,ОБР_scat.points,16)
-    .map(п=>Array.isArray(п)?п:[Number(п.x)||0,Number(п.y)||0,п.hi?1:0]);
+    .map(п=>Array.isArray(п)?п:[Number(п.x)||0,Number(п.y)||0,п.hi?1:0])
+    .map(([a,b,hi])=>[Math.max(0,Math.min(100,a)),Math.max(0,Math.min(100,b)),hi]);
   o+=`<line x1="${ox}" y1="${oy+ph}" x2="${ox+pw}" y2="${oy+ph}" stroke="${s.ln}" stroke-width="${s.mode==='brutal'?3:1}"/>`;
   o+=`<line x1="${ox}" y1="${oy}" x2="${ox}" y2="${oy+ph}" stroke="${s.ln}" stroke-width="${s.mode==='brutal'?3:1}"/>`;
   const gl=s.glow?` filter="${s.glow}"`:'';
