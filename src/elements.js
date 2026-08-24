@@ -57,9 +57,11 @@ function elKpi(s,дан){
   const label=строка(дан&&дан.label,ОБР_kpi.label);
   const value=строка(дан&&дан.value,ОБР_kpi.value);
   const delta=строка(дан&&дан.delta,ОБР_kpi.delta);
-  o+=txt(s,cx,base+22,t(s,ужать(label,bw,13)[0]),13,s.wl,s.ts,s.ls);
+  const [лбл,лfs]=ужать(label,bw,13);
+  o+=txt(s,cx,base+22,t(s,лбл),лfs,s.wl,s.ts,s.ls);
   // value кладётся крупным кеглем и вылезает за карточку первым
-  o+=txt(s,cx,base+76,ужать(value,bw,38)[0],38,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-1);
+  const [зн,зfs]=ужать(value,bw,38);
+  o+=txt(s,cx,base+76,зн,зfs,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-1);
   o+=chip(s,cx,base+92,ужать(delta,bч,12.5,12.5)[0]);
   return wrapSvg(s,o);
 }
@@ -84,7 +86,7 @@ function elBars(s,дан){
   const h=hh-PAD*2;
   let o=frameH(s,hh)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
   const cx=x+20,bw=w-52;
-  if(заг)o+=txt(s,cx,y+24,t(s,ужать(заг,bw,12,9)[0]),12,s.wl,s.ts,s.ls);
+  if(заг){const [згТ,згFs]=ужать(заг,bw,12,9);o+=txt(s,cx,y+24,t(s,згТ),згFs,s.wl,s.ts,s.ls);}
   // подпись слева не должна доехать до значения справа
   const [подписи,fs]=ужатьНабор(rows.map(р=>t(s,String(р.label==null?'':р.label))),bw-44,12,8.5);
   rows.forEach((р,i)=>{
@@ -105,7 +107,8 @@ function elColumn(s,дан){
   let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
   const ox=x+26,oy=y+22,pw=w-58,ph=h-98;
   const заг=строка(дан&&дан.title,ОБР_column.title);
-  o+=txt(s,ox,oy+12,t(s,ужать(заг,pw,12,9)[0]),12,s.wl,s.ts,s.ls);
+  const [згТ,згFs]=ужать(заг,pw,12,9);
+  o+=txt(s,ox,oy+12,t(s,згТ),згFs,s.wl,s.ts,s.ls);
   const ряд=ряды(дан&&дан.bars,ОБР_column.bars,7);
   const знач=ряд.map(б=>Math.max(0,Number(б.v)||0));
   // масштаб считается от максимума переданных значений, нормировать не нужно (договор);
@@ -184,7 +187,8 @@ function elRadar(s,дан){
   const vals=оси.map(о=>Math.max(0,Math.min(100,Number(о.v)||0)));
   const labs=оси.map(о=>String(о.label==null?'':о.label));
   const заг=строка(дан&&дан.title,ОБР_radar.title);
-  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  const [згТ,згFs]=ужать(заг,w-40,12,9);
+  o+=txt(s,x+20,y+24,t(s,згТ),згFs,s.wl,s.ts,s.ls);
   const dash=s.mode==='line'?' stroke-dasharray="3 3"':'';
   [100,66,33].forEach(k=>{
     const pts=[...Array(N)].map((_,i)=>radPt(cx,cy,R,i,N,k).join(',')).join(' ');
@@ -229,7 +233,8 @@ function elGauge(s,дан){
   const cap=s.mode==='clay'?'round':'butt';
   const gl=s.glow?` filter="${s.glow}"`:'';
   const заг=строка(дан&&дан.title,ОБР_gauge.title);
-  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  const [згТ,згFs]=ужать(заг,w-40,12,9);
+  o+=txt(s,x+20,y+24,t(s,згТ),згFs,s.wl,s.ts,s.ls);
   if(s.mode==='retro'){ // дуга набрана отдельными сегментами
     const N=16;
     for(let i=0;i<N;i++){const a=Math.PI*(1-i/(N-1));
@@ -246,7 +251,8 @@ function elGauge(s,дан){
   }
   o+=txt(s,cx,cy-8,V+'%',26,s.wv,s.mode==='neon'||s.mode==='retro'?s.ac:s.tp,-.5).replace('<text ','<text text-anchor="middle" ');
   const подпись=строка(дан&&дан.caption,ОБР_gauge.caption);
-  o+=txt(s,cx,cy+20,t(s,ужать(подпись,w-40,10)[0]),10,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
+  const [пдТ,пдFs]=ужать(подпись,w-40,10);
+  o+=txt(s,cx,cy+20,t(s,пдТ),пдFs,s.wl,s.tm,null).replace('<text ','<text text-anchor="middle" ');
   return wrapSvg(s,o);
 }
 
@@ -258,7 +264,8 @@ function elArea(s,дан){
   let o=frame(s)+surface(s,x,y,w,h);
   const ox=x+24,oy=y+40,pw=w-48,ph=h-78;
   const заг=строка(дан&&дан.title,ОБР_area.title);
-  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  const [згТ,згFs]=ужать(заг,w-40,12,9);
+  o+=txt(s,x+20,y+24,t(s,згТ),згFs,s.wl,s.ts,s.ls);
   const тчк=ряды(дан&&дан.points,ОБР_area.points,9);
   // масштаб считается от максимума переданных значений, нормировать не нужно (договор);
   // основание — ноль, растёт только верх; если все значения нулевые или
@@ -287,7 +294,8 @@ function elArea(s,дан){
   if(s.mode!=='retro'&&s.mode!=='line')
     o+=`<circle cx="${px(n-1)}" cy="${py(vals[n-1])}" r="${s.mode==='clay'?5:4}" fill="${s.ac}"${gl}/>`;
   const delta=строка(дан&&дан.delta,ОБР_area.delta);
-  o+=txt(s,ox+pw,py(vals[n-1])-12,ужать(delta,pw-8,12,8)[0],12,700,s.ac,null).replace('<text ','<text text-anchor="end" ');
+  const [длТ,длFs]=ужать(delta,pw-8,12,8);
+  o+=txt(s,ox+pw,py(vals[n-1])-12,длТ,длFs,700,s.ac,null).replace('<text ','<text text-anchor="end" ');
   // подписи — опорные точки: первая, последняя, промежуточные с равным шагом
   // (договор: подписываются не все точки, а 3–4 опорные); подписей больше,
   // чем точек, не бывает по замыслу — лишние отбрасываются на всякий случай
@@ -310,7 +318,8 @@ function elWaterfall(s,дан){
   let o=frame(s)+surface(s,x,y,iso?w-s.dx:w,iso?h+s.dy:h);
   const ox=x+24,oy=y+42,pw=w-56-(iso?s.dx:0),ph=h-80;
   const заг=строка(дан&&дан.title,ОБР_wf.title);
-  o+=txt(s,x+20,y+24,t(s,ужать(заг,w-40,12,9)[0]),12,s.wl,s.ts,s.ls);
+  const [згТ,згFs]=ужать(заг,w-40,12,9);
+  o+=txt(s,x+20,y+24,t(s,згТ),згFs,s.wl,s.ts,s.ls);
   const шагиДан=ряды(дан&&дан.steps,ОБР_wf.steps,7);
   const N2=шагиДан.length;
   // тип нормализуется к перечислению договора; вне перечисления — приращение,
