@@ -2439,4 +2439,4 @@ const CATS=[
   ["Числа и инфографика",[["bignum","Большое число",elBigNum,ОБР_bignum],["facts","Три факта",elFacts,ОБР_facts],["statcard","Показатель с трендом",elStatCard,ОБР_statcard],["ring","Кольцо прогресса",elRing,ОБР_ring],["icons","Четыре преимущества",elIcons,ОБР_icons],["quote","Цитата с цифрами",elQuote,ОБР_quote],["before","До и после",elBefore,ОБР_before]]],
   ["Переходные слайды",[["divider","Разделитель раздела",elDivider,ОБР_divider],["chapter","Открытие главы",elChapter,ОБР_chapter],["thanks","Финальный слайд",elThanks,ОБР_thanks],["agenda","Содержание",elAgenda,ОБР_agenda],["speaker","Профиль спикера",elSpeaker,ОБР_speaker],["faq","Вопросы и ответы",elFaq,ОБР_faq]]]
 ];
-export { CATS, ПРОБА_ПРЕДЕЛА, пределЗнаков, словами };
+export { CATS, ПРОБА_ПРЕДЕЛА, наборПробы, пределЗнаков, словами };
