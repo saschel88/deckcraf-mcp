@@ -1061,7 +1061,7 @@ function elBubble(s,дан,зам){
     вРамках(зам,`bubbles[${i}].r`,Number(б.r)||0,8,30),пал[i%пал.length]]);
   const ox=x+16,oy=y+42,pw=w-32,ph=h-58;
   const gl=s.glow?` filter="${s.glow}"`:'';
-  B.forEach(([l,X,Y,r,c])=>{
+  B.forEach(([l,X,Y,r,c],i)=>{
     const bx=+(ox+pw*X/100).toFixed(1),by=+(oy+ph*Y/100).toFixed(1);
     if(s.mode==='line')       o+=`<circle cx="${bx}" cy="${by}" r="${r}" fill="none" stroke="${c}" stroke-width="1.5"/>`;
     else if(s.mode==='brutal')o+=`<circle cx="${bx}" cy="${by}" r="${r}" fill="${s.hard}" stroke="${s.hard}" stroke-width="3"/>`;
@@ -1072,7 +1072,7 @@ function elBubble(s,дан,зам){
       if(s.mode==='clay')o+=`<ellipse cx="${bx}" cy="${(by-r*.42).toFixed(1)}" rx="${(r*.5).toFixed(1)}" ry="${(r*.24).toFixed(1)}" fill="${s.hi}" fill-opacity=".32"/>`;}
     // подпись помещается только в крупные пузыри (договор) — мелким её не втискиваем
     if(r>14){const tc=nodeTx(s,c);
-      const [бТ,бFs]=ужать(t(s,l),r*1.6,r>24?12:10,8,{s});
+      const [бТ,бFs]=ужать(t(s,l),r*1.6,r>24?12:10,8,{сбор:зам,слот:`bubbles[${i}].label`,s});
       o+=txt(s,bx,by+4,бТ,бFs,700,tc,null).replace('<text ','<text text-anchor="middle" ');}
   });
   return wrapSvg(s,o);
@@ -1185,7 +1185,7 @@ function elFunnel(s,дан,зам){
       else o+=`<polygon points="${pts}" fill="${c}" fill-opacity="${(s.mode==='glass'||s.mode==='aurora')?.5:1}"/>`;
     }
     o+=txt(s,labR,by+14,метки[i],мfs,s.wl,s.ts,null).replace('<text ','<text text-anchor="end" ');
-    const [vТ,vFs]=ужать(v,Math.max(nb,24),11,8);
+    const [vТ,vFs]=ужать(v,Math.max(nb,24),11,8,{сбор:зам,слот:`levels[${i}].value`});
     o+=txt(s,cx,by+14,vТ,vFs,700,nodeTx(s,c),null).replace('<text ','<text text-anchor="middle" ');
   });
   return wrapSvgH(s,o,hh);
@@ -1301,7 +1301,7 @@ function elRoadmap(s,дан,зам){
     o+=shape(s,bx,by,bw,bh,c,1);
     const tc=nodeTx(s,c);
     // подпись живёт внутри своей полосы: короткая полоса — мелкий кегль
-    const [лп,лfs]=ужать(t(s,l),bw-14,9.5,6.5,{s});
+    const [лп,лfs]=ужать(t(s,l),bw-14,9.5,6.5,{сбор:зам,слот:`rows[${i}].label`,s});
     o+=txt(s,bx+8,by+11,лп,лfs,s.wl,tc,null);
   });
   return wrapSvgH(s,o,hh);
