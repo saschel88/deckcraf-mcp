@@ -13,6 +13,7 @@
     "baseline": "node tools/audit.js --snapshot tools/baseline.json --write",
     "data": "node tools/data-check.js",
     "smoke": "node tools/smoke.js",
+    "schema": "node tools/schema-check.js",
     "host": "node tools/host-check.js",
     "find": "node tools/find-check.js"
   },
