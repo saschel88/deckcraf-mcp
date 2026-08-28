@@ -12,6 +12,7 @@
     "diff": "node tools/diff-run.js",
     "baseline": "node tools/audit.js --snapshot tools/baseline.json --write",
     "data": "node tools/data-check.js",
+    "count": "node tools/count-check.js",
     "smoke": "node tools/smoke.js",
     "schema": "node tools/schema-check.js",
     "host": "node tools/host-check.js",
