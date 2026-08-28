@@ -370,10 +370,59 @@ function frame(s){
   if(s.deco&&!s.decoTop) o+=s.deco(W,H);
   return o;
 }
+/* ═══════ В <defs> УХОДИТ ТОЛЬКО ТО, НА ЧТО ЕСТЬ ССЫЛКА ═══════
+   Определения приходят из стиля ЦЕЛИКОМ: gradient объявляет три градиента,
+   neuro — два фильтра, а конкретный элемент читает не все. Замер наряда 27:
+   146 объявлений без единого читателя в 100 отрисовках из 676 — 27 190 байт,
+   которые скачивает и разбирает всякий, кто открывает такой файл.
+   Отбор идёт ПО ГОТОВОЙ РАЗМЕТКЕ: чего не назвала ссылка, того в файле
+   и не будет. Ссылка ищется в обоих видах — url(#имя) и href="#имя" —
+   и по всей строке разом: url(#…) встречается и в атрибутах, и в стилях.
+   Живым считается и то, что названо из другого ЖИВОГО определения,
+   поэтому счёт идёт до неподвижной точки.
+   Разбор не справился либо всё живо — строка отдаётся как была, байт в байт. */
+function defsOf(defs,markup){
+  if(!defs) return '';
+  const parts=[];
+  let i=0;
+  while(i<defs.length){
+    const o=defs.indexOf('<',i); if(o<0) break;
+    const nm=(/^<([A-Za-z][\w:.-]*)/.exec(defs.slice(o))||[])[1]; if(!nm) return defs;
+    const gt=defs.indexOf('>',o); if(gt<0) return defs;
+    let end;
+    if(defs[gt-1]==='/') end=gt+1;
+    else{
+      const c=defs.indexOf('</'+nm,gt); if(c<0) return defs;
+      if(defs.slice(gt,c).indexOf('<'+nm)>=0) return defs;   // вложенное одноимённое — разбор не наш
+      end=defs.indexOf('>',c); if(end<0) return defs;
+      end++;
+    }
+    const t=defs.slice(o,end);
+    parts.push({pre:defs.slice(i,o),t,id:(/\sid="([^"]*)"/.exec(t)||[])[1]||null});
+    i=end;
+  }
+  if(!parts.length||parts.some(p=>!p.id)) return defs;       // безымянное не отбираем: на него и не сослаться
+  const refs=t=>{const r=[];
+    for(const m of String(t).matchAll(/url\(\s*#([^)\s"']+)\s*\)/g)) r.push(m[1]);
+    for(const m of String(t).matchAll(/(?:xlink:)?href="#([^"]+)"/g)) r.push(m[1]);
+    return r;};
+  let live=parts.map(p=>p.id);
+  for(;;){
+    const named=new Set(refs(markup));
+    for(const p of parts) if(live.indexOf(p.id)>=0) for(const r of refs(p.t)) named.add(r);
+    const next=live.filter(id=>named.has(id));
+    if(next.length===live.length) break;
+    live=next;
+  }
+  if(live.length===parts.length) return defs;                // всё читается — отдаём байт в байт
+  const kept=parts.filter(p=>live.indexOf(p.id)>=0);
+  return kept.map((p,n)=>(n?p.pre:'')+p.t).join('');
+}
 function wrapSvg(s,inner){
   const cr=s.crisp?' shape-rendering="crispEdges"':'';
   const top=(s.deco&&s.decoTop)?s.deco(W,H):'';
-  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"${cr}>${s.defs?`<defs>${s.defs}</defs>`:''}${inner}${top}</svg>`;
+  const df=defsOf(s.defs,inner+top);
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"${cr}>${df?`<defs>${df}</defs>`:''}${inner}${top}</svg>`;
 }
 
 /* ═══════ ЭЛЕМЕНТЫ ═══════ */
@@ -514,7 +563,8 @@ function txtLines(s,x,y,lines,fs,weight,fill,anchor,lh){
 function wrapSvgH(s,inner,hh){
   const cr=s.crisp?' shape-rendering="crispEdges"':'';
   const top=(s.deco&&s.decoTop)?s.deco(W,hh):'';
-  return `<svg viewBox="0 0 ${W} ${hh}" xmlns="http://www.w3.org/2000/svg"${cr}>${s.defs?`<defs>${s.defs}</defs>`:''}${inner}${top}</svg>`;
+  const df=defsOf(s.defs,inner+top);
+  return `<svg viewBox="0 0 ${W} ${hh}" xmlns="http://www.w3.org/2000/svg"${cr}>${df?`<defs>${df}</defs>`:''}${inner}${top}</svg>`;
 }
 function frameH(s,hh){
   let o=`<rect width="${W}" height="${hh}" fill="${s.bg}"/>`;
