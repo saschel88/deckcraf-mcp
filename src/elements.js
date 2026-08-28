@@ -753,7 +753,7 @@ function elRadar(s,дан,зам){
   // хорда между соседними точками подписи на радиусе R+17 (при семи осях шаг у́же)
   const Rl=R+17;
   const хорда=2*Rl*Math.sin(Math.PI/N);
-  const [лаб,лfs]=ужатьНабор(labs.map(l=>t(s,l)),Math.max(20,хорда-6),9,6.5,{сбор:зам,слоты:labs.map((_,i)=>`axes[${i}].label`),s});
+  const [лаб,лfs]=ужатьНабор(labs.map(l=>t(s,l)),Math.max(20,хорда-6),9,6.5,{сбор:зам,слоты:labs.map((_,i)=>вРяду(дан&&дан.axes,i,'label')?`axes[${i}].label`:null),s});
   labs.forEach((l,i)=>{const p=radPt(cx,cy,Rl,i,N,100);
     const an=p[0]>cx+3?'start':p[0]<cx-3?'end':'middle';
     o+=txt(s,p[0],p[1]+3,лаб[i],лfs,s.wl,s.tm,null).replace('<text ',`<text text-anchor="${an}" `);});
@@ -938,7 +938,7 @@ function elWaterfall(s,дан,зам){
   // дорожка на шаг вместе с зазором), а не из голой ширины столбца: у образца
   // «Лицензии» (8 знаков) при узкой bw-4 уже не умещалась при кегле 9 и получала
   // чужой, чем раньше, размер шрифта — совпадение с эталоном ломалось
-  const [метки,мfs]=ужатьНабор(шаги.map(ш=>t(s,ш.l)),bw+9-3,9,6.5,{сбор:зам,слоты:шаги.map((_,i)=>`steps[${i}].label`),s});
+  const [метки,мfs]=ужатьНабор(шаги.map(ш=>t(s,ш.l)),bw+9-3,9,6.5,{сбор:зам,слоты:шаги.map((_,i)=>вРяду(дан&&дан.steps,i,'label')?`steps[${i}].label`:null),s});
   шаги.forEach((st,i)=>{
     const bx=ox+i*(bw+9);
     let top,bh;
@@ -1406,7 +1406,7 @@ function elRoadmap(s,дан,зам){
     o+=shape(s,bx,by,bw,bh,c,1);
     const tc=nodeTx(s,c);
     // подпись живёт внутри своей полосы: короткая полоса — мелкий кегль
-    const [лп,лfs]=ужать(t(s,l),bw-14,9.5,6.5,{сбор:зам,слот:`rows[${i}].label`,s});
+    const [лп,лfs]=ужать(t(s,l),bw-14,9.5,6.5,{сбор:зам,слот:вРяду(дан&&дан.rows,i,'label')?`rows[${i}].label`:null,s});
     o+=txt(s,bx+8,by+11,лп,лfs,s.wl,tc,null);
   });
   return wrapSvgH(s,o,hh);
